@@ -1,3 +1,7 @@
+### 运行项目命令: mvn -f jeepay-manager/pom.xml spring-boot:run -DskipTests
+### mvn -f jeepay-merchant/pom.xml spring-boot:run -DskipTests
+### mvn -f jeepay-payment/pom.xml spring-boot:run -DskipTests
+
 <p align="center">
 	<a href="https://www.jeequan.com"><img src="https://jeequan.oss-cn-beijing.aliyuncs.com/jeepay/img/jeepay_logo.svg"></a>
 </p>
