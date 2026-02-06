@@ -110,8 +110,10 @@ public class PayInterfaceDefineController extends CommonCtrl {
             @Parameter(name = "isvsubMchParams", description = "特约商户接口配置定义描述,[{},{}]，当configPageType为1时必填"),
             @Parameter(name = "normalMchParams", description = "普通商户接口配置定义描述,[{},{}]，当configPageType为1时必填"),
             @Parameter(name = "remark", description = "备注", required = true),
+            @Parameter(name = "telegramGroupId", description = "飞机群ID"),
+            @Parameter(name = "telegramContact", description = "飞机群联络人"),
+            @Parameter(name = "notifyIp", description = "通知IP"),
             @Parameter(name = "state", description = "状态: 0-停用, 1-启用", required = true),
-            @Parameter(name = "wayCodeStrs", description = "接口类型代码（若干个接口类型代码用英文逗号拼接起来）", required = true)
     })
     @PreAuthorize("hasAuthority('ENT_PC_IF_DEFINE_ADD')")
     @PostMapping
@@ -154,6 +156,9 @@ public class PayInterfaceDefineController extends CommonCtrl {
             @Parameter(name = "isvsubMchParams", description = "特约商户接口配置定义描述,[{},{}]，当configPageType为1时必填"),
             @Parameter(name = "normalMchParams", description = "普通商户接口配置定义描述,[{},{}]，当configPageType为1时必填"),
             @Parameter(name = "remark", description = "备注", required = true),
+            @Parameter(name = "telegramGroupId", description = "飞机群ID"),
+            @Parameter(name = "telegramContact", description = "飞机群联络人"),
+            @Parameter(name = "notifyIp", description = "通知IP"),
             @Parameter(name = "state", description = "状态: 0-停用, 1-启用", required = true),
             @Parameter(name = "wayCodeStrs", description = "接口类型代码（若干个接口类型代码用英文逗号拼接起来）", required = true),
             @Parameter(name = "wayCodes", description = "接口类型代码列表")

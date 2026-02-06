@@ -1,3 +1,4 @@
+### 构建项目: mvn clean install
 ### 运行项目命令: mvn -f jeepay-manager/pom.xml spring-boot:run -DskipTests
 ### mvn -f jeepay-merchant/pom.xml spring-boot:run -DskipTests
 ### mvn -f jeepay-payment/pom.xml spring-boot:run -DskipTests

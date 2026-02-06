@@ -17,6 +17,9 @@
         <result column="bg_color" property="bgColor" />
         <result column="state" property="state" />
         <result column="remark" property="remark" />
+        <result column="telegram_group_id" property="telegramGroupId" />
+        <result column="telegram_contact" property="telegramContact" />
+        <result column="notify_ip" property="notifyIp" />
         <result column="created_at" property="createdAt" />
         <result column="updated_at" property="updatedAt" />
     </resultMap>

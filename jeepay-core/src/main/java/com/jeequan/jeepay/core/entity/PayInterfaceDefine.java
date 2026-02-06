@@ -132,6 +132,24 @@ public class PayInterfaceDefine extends BaseModel implements Serializable {
     private String remark;
 
     /**
+     * 飞机群ID
+     */
+    @Schema(title = "telegramGroupId", description = "飞机群ID")
+    private String telegramGroupId;
+
+    /**
+     * 飞机群联络人
+     */
+    @Schema(title = "telegramContact", description = "飞机群联络人")
+    private String telegramContact;
+
+    /**
+     * 通知IP
+     */
+    @Schema(title = "notifyIp", description = "通知IP")
+    private String notifyIp;
+
+    /**
      * 创建时间
      */
     @Schema(title = "createdAt", description = "创建时间")
