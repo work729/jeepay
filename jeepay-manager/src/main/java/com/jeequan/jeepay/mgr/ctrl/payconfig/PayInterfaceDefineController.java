@@ -17,12 +17,14 @@ package com.jeequan.jeepay.mgr.ctrl.payconfig;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
 import com.jeequan.jeepay.core.entity.PayInterfaceConfig;
 import com.jeequan.jeepay.core.entity.PayInterfaceDefine;
 import com.jeequan.jeepay.core.entity.PayOrder;
 import com.jeequan.jeepay.core.exception.BizException;
+import com.jeequan.jeepay.core.model.ApiPageRes;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
 import com.jeequan.jeepay.service.impl.PayInterfaceConfigService;
@@ -66,12 +68,13 @@ public class PayInterfaceDefineController extends CommonCtrl {
     })
     @PreAuthorize("hasAuthority('ENT_PC_IF_DEFINE_LIST')")
     @GetMapping
-    public ApiRes<List<PayInterfaceDefine>> list() {
+    public ApiRes<ApiPageRes.PageBean<PayInterfaceDefine>> list() {
 
-        List<PayInterfaceDefine> list = payInterfaceDefineService.list(PayInterfaceDefine.gw()
+        IPage<PayInterfaceDefine> page = getIPage(true);
+        payInterfaceDefineService.page(page, PayInterfaceDefine.gw()
                 .orderByAsc(PayInterfaceDefine::getCreatedAt)
         );
-        return ApiRes.ok(list);
+        return ApiRes.page(page);
     }
 
 
