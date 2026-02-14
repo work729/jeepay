@@ -476,6 +476,23 @@ CREATE TABLE `t_pay_order_division_record` (
           PRIMARY KEY (`record_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1001 DEFAULT CHARSET=utf8mb4 COMMENT='分账记录表';
 
+CREATE TABLE `t_pay_channel`
+(
+    `channel_sign`        varchar(64)  NOT NULL COMMENT '通道标识',
+    `channel_name`        varchar(128) NOT NULL COMMENT '通道名称',
+    `if_code`             varchar(64)  NOT NULL COMMENT '接口代码',
+    `state`               tinyint(1) NOT NULL DEFAULT 1 COMMENT '通道状态: 0-停用, 1-启用',
+    `is_float`            tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否浮动: 0-否, 1-是',
+    `remark`              varchar(255) DEFAULT NULL COMMENT '备注信息',
+    `weight`              int          DEFAULT 0 COMMENT '轮询权重',
+    `account_name`        varchar(128) DEFAULT NULL COMMENT '账户名称',
+    `channel_mch_id`      varchar(128) DEFAULT NULL COMMENT '渠道商户ID',
+    `channel_sign_config` text         DEFAULT NULL COMMENT '通道标识配置JSON',
+    `created_at`          datetime     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`          datetime     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`channel_sign`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付通道表';
+
 
 
 #####  ↑↑↑↑↑↑↑↑↑↑  表结构DDL  ↑↑↑↑↑↑↑↑↑↑  #####
@@ -548,13 +565,15 @@ insert into t_sys_entitlement values('ENT_ORDER', '订单管理', 'transaction',
 
 -- 支付配置菜单
 insert into t_sys_entitlement values('ENT_PC', '支付配置', 'file-done', '', 'RouteView', 'ML', 0, 1,  'ROOT', '60', 'MGR', now(), now());
-    insert into t_sys_entitlement values('ENT_PC_IF_DEFINE', '支付接口', 'interaction', '/ifdefines', 'IfDefinePage', 'ML', 0, 1,  'ENT_PC', '10', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_PC_IF_DEFINE', '通道标识', 'interaction', '/ifdefines', 'IfDefinePage', 'ML', 0, 1,  'ENT_PC', '10', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_LIST', '页面：支付接口定义列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_SEARCH', '页面：搜索', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_ADD', '按钮：新增', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_EDIT', '按钮：修改', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_DEL', '按钮：删除', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_PC_IF_CHANNEL', '支付通道', 'interaction', '/channel', 'ChannelPage', 'ML', 0, 1,  'ENT_PC', '11', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_PC_IF_CHANNEL_LIST', '页面：支付通道定义列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_CHANNEL', '0', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_PC_WAY', '支付方式', 'appstore', '/payways', 'PayWayPage', 'ML', 0, 1,  'ENT_PC', '20', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_WAY_LIST', '页面：支付方式列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_WAY', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_WAY_SEARCH', '页面：搜索', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_WAY', '0', 'MGR', now(), now());
