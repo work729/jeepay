@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,20 @@ public class PayChannelController extends CommonCtrl {
     @GetMapping
     public ApiRes<ApiPageRes.PageBean<PayChannel>> list() {
         IPage<PayChannel> page = getIPage(true);
-        payChannelService.page(page, PayChannel.gw().orderByAsc(PayChannel::getCreatedAt));
+        String channelName = getValString("channelName");
+        String ifCode = getValString("ifCode");
+        String channelSign = getValString("channelSign");
+        Integer state = getValInteger("state");
+
+        payChannelService.page(
+                page,
+                PayChannel.gw()
+                        .like(StringUtils.isNotBlank(channelName), PayChannel::getChannelName, channelName)
+                        .like(StringUtils.isNotBlank(ifCode), PayChannel::getIfCode, ifCode)
+                        .eq(StringUtils.isNotBlank(channelSign), PayChannel::getChannelSign, channelSign)
+                        .eq(state != null, PayChannel::getState, state)
+                        .orderByAsc(PayChannel::getCreatedAt)
+        );
         return ApiRes.page(page);
     }
 
