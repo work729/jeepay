@@ -574,6 +574,8 @@ insert into t_sys_entitlement values('ENT_PC', '支付配置', 'file-done', '', 
         insert into t_sys_entitlement values('ENT_PC_IF_DEFINE_DEL', '按钮：删除', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_DEFINE', '0', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_PC_IF_CHANNEL', '支付通道', 'interaction', '/channel', 'ChannelPage', 'ML', 0, 1,  'ENT_PC', '11', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_IF_CHANNEL_LIST', '页面：支付通道定义列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_IF_CHANNEL', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_PC_PRODUCT', '支付产品', 'interaction', '/product', 'ProductPage', 'ML', 0, 1,  'ENT_PC', '12', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_PC_IF_CHANNEL_LIST', '页面：支付产品列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_PRODUCT', '0', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_PC_WAY', '支付方式', 'appstore', '/payways', 'PayWayPage', 'ML', 0, 1,  'ENT_PC', '20', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_WAY_LIST', '页面：支付方式列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_WAY', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_WAY_SEARCH', '页面：搜索', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_WAY', '0', 'MGR', now(), now());
