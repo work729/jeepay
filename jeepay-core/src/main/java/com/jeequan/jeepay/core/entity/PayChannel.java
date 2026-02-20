@@ -29,6 +29,9 @@ public class PayChannel extends BaseModel implements Serializable {
 
     private static final long serialVersionUID=1L;
 
+    @Schema(title = "id", description = "主键ID")
+    private Long id;
+
     @Schema(title = "channelSign", description = "通道标识")
     @TableId
     private String channelSign;

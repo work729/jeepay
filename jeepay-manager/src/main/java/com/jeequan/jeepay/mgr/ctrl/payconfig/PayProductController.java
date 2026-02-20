@@ -88,10 +88,10 @@ public class PayProductController extends CommonCtrl {
         List<PayProductChannel> relations = payProductChannelService.list(
                 PayProductChannel.gw().eq(PayProductChannel::getProductId, id)
         );
-        List<String> channelSignList = relations.stream()
-                .map(PayProductChannel::getChannelSign)
+        List<Long> channelIdList = relations.stream()
+                .map(PayProductChannel::getChannelId)
                 .collect(Collectors.toList());
-        payProduct.addExt("channelSignList", channelSignList);
+        payProduct.addExt("channelIdList", channelIdList);
         return ApiRes.ok(payProduct);
     }
 
@@ -108,7 +108,7 @@ public class PayProductController extends CommonCtrl {
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_CREATE);
         }
-        saveProductChannels(payProduct.getId(), parseChannelSignList(payProduct));
+        saveProductChannels(payProduct.getId(), parseChannelIdList(payProduct));
         return ApiRes.ok();
     }
 
@@ -127,7 +127,7 @@ public class PayProductController extends CommonCtrl {
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_UPDATE);
         }
-        saveProductChannels(id, parseChannelSignList(payProduct));
+        saveProductChannels(id, parseChannelIdList(payProduct));
         return ApiRes.ok();
     }
 
@@ -150,28 +150,28 @@ public class PayProductController extends CommonCtrl {
         return ApiRes.ok();
     }
 
-    private List<String> parseChannelSignList(PayProduct payProduct) {
-        JSONArray arr = payProduct.extv().getJSONArray("channelSignList");
+    private List<Long> parseChannelIdList(PayProduct payProduct) {
+        JSONArray arr = payProduct.extv().getJSONArray("channelIdList");
         if (arr == null) {
             return Collections.emptyList();
         }
-        return arr.toJavaList(String.class);
+        return arr.toJavaList(Long.class);
     }
 
-    private void saveProductChannels(Long productId, List<String> channelSignList) {
+    private void saveProductChannels(Long productId, List<Long> channelIdList) {
         if (productId == null) {
             return;
         }
         payProductChannelService.remove(
                 PayProductChannel.gw().eq(PayProductChannel::getProductId, productId)
         );
-        if (channelSignList == null || channelSignList.isEmpty()) {
+        if (channelIdList == null || channelIdList.isEmpty()) {
             return;
         }
-        List<PayProductChannel> list = channelSignList.stream().map(sign -> {
+        List<PayProductChannel> list = channelIdList.stream().map(channelId -> {
             PayProductChannel item = new PayProductChannel();
             item.setProductId(productId);
-            item.setChannelSign(sign);
+            item.setChannelId(channelId);
             return item;
         }).collect(Collectors.toList());
         payProductChannelService.saveBatch(list);

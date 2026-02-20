@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS t_pay_product (
-  id int(20) NOT NULL AUTO_INCREMENT,
+  id int NOT NULL AUTO_INCREMENT,
   product_name VARCHAR(64) NOT NULL,
   product_type TINYINT NOT NULL,
   interface_mode TINYINT NOT NULL default 1 COMMENT '1:单独, 2:轮旬',
@@ -12,12 +12,12 @@ CREATE TABLE IF NOT EXISTS t_pay_product (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS t_pay_product_channel (
-  id BIGINT(20) NOT NULL AUTO_INCREMENT,
-  product_id BIGINT(20) NOT NULL,
-  channel_sign VARCHAR(64) NOT NULL,
+  id int NOT NULL AUTO_INCREMENT,
+  product_id int NOT NULL,
+  channel_id int NOT NULL,
   created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_product_id (product_id),
-  KEY idx_channel_sign (channel_sign)
+  KEY idx_channel_id (channel_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

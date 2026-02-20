@@ -33,8 +33,8 @@ public class PayProductChannel extends BaseModel implements Serializable {
     @Schema(title = "productId", description = "支付产品ID")
     private Long productId;
 
-    @Schema(title = "channelSign", description = "通道标识")
-    private String channelSign;
+    @Schema(title = "channelId", description = "通道ID")
+    private Long channelId;
 
     @Schema(title = "createdAt", description = "创建时间")
     private Date createdAt;
@@ -42,4 +42,3 @@ public class PayProductChannel extends BaseModel implements Serializable {
     @Schema(title = "updatedAt", description = "更新时间")
     private Date updatedAt;
 }
-
