@@ -4,15 +4,18 @@
  */
 package com.jeequan.jeepay.mgr.ctrl.payconfig;
 
+import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
 import com.jeequan.jeepay.core.constants.PayProductInterfaceModeEnum;
 import com.jeequan.jeepay.core.constants.PayProductTypeEnum;
 import com.jeequan.jeepay.core.entity.PayProduct;
+import com.jeequan.jeepay.core.entity.PayProductChannel;
 import com.jeequan.jeepay.core.model.ApiPageRes;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
+import com.jeequan.jeepay.service.impl.PayProductChannelService;
 import com.jeequan.jeepay.service.impl.PayProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,6 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Tag(name = "支付产品管理")
 @RestController
 @RequestMapping("api/payProducts")
@@ -31,6 +38,9 @@ public class PayProductController extends CommonCtrl {
 
     @Autowired
     private PayProductService payProductService;
+
+    @Autowired
+    private PayProductChannelService payProductChannelService;
 
     @Operation(summary = "支付产品--列表")
     @Parameters({
@@ -74,7 +84,15 @@ public class PayProductController extends CommonCtrl {
     @PreAuthorize("hasAnyAuthority('ENT_PC_IF_DEFINE_VIEW', 'ENT_PC_IF_DEFINE_EDIT')")
     @GetMapping("/{id}")
     public ApiRes<PayProduct> detail(@PathVariable("id") Long id) {
-        return ApiRes.ok(payProductService.getById(id));
+        PayProduct payProduct = payProductService.getById(id);
+        List<PayProductChannel> relations = payProductChannelService.list(
+                PayProductChannel.gw().eq(PayProductChannel::getProductId, id)
+        );
+        List<String> channelSignList = relations.stream()
+                .map(PayProductChannel::getChannelSign)
+                .collect(Collectors.toList());
+        payProduct.addExt("channelSignList", channelSignList);
+        return ApiRes.ok(payProduct);
     }
 
     @Operation(summary = "支付产品--新增")
@@ -90,6 +108,7 @@ public class PayProductController extends CommonCtrl {
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_CREATE);
         }
+        saveProductChannels(payProduct.getId(), parseChannelSignList(payProduct));
         return ApiRes.ok();
     }
 
@@ -108,6 +127,7 @@ public class PayProductController extends CommonCtrl {
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_UPDATE);
         }
+        saveProductChannels(id, parseChannelSignList(payProduct));
         return ApiRes.ok();
     }
 
@@ -124,6 +144,36 @@ public class PayProductController extends CommonCtrl {
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_DELETE);
         }
+        payProductChannelService.remove(
+                PayProductChannel.gw().eq(PayProductChannel::getProductId, id)
+        );
         return ApiRes.ok();
+    }
+
+    private List<String> parseChannelSignList(PayProduct payProduct) {
+        JSONArray arr = payProduct.extv().getJSONArray("channelSignList");
+        if (arr == null) {
+            return Collections.emptyList();
+        }
+        return arr.toJavaList(String.class);
+    }
+
+    private void saveProductChannels(Long productId, List<String> channelSignList) {
+        if (productId == null) {
+            return;
+        }
+        payProductChannelService.remove(
+                PayProductChannel.gw().eq(PayProductChannel::getProductId, productId)
+        );
+        if (channelSignList == null || channelSignList.isEmpty()) {
+            return;
+        }
+        List<PayProductChannel> list = channelSignList.stream().map(sign -> {
+            PayProductChannel item = new PayProductChannel();
+            item.setProductId(productId);
+            item.setChannelSign(sign);
+            return item;
+        }).collect(Collectors.toList());
+        payProductChannelService.saveBatch(list);
     }
 }

@@ -11,3 +11,13 @@ CREATE TABLE IF NOT EXISTS t_pay_product (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS t_pay_product_channel (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  product_id BIGINT(20) NOT NULL,
+  channel_sign VARCHAR(64) NOT NULL,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_product_id (product_id),
+  KEY idx_channel_sign (channel_sign)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
