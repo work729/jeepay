@@ -4,6 +4,7 @@
  */
 package com.jeequan.jeepay.core.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -40,6 +41,10 @@ public class PayProduct extends BaseModel implements Serializable {
     @Schema(title = "productType", description = "产品类型")
     private Integer productType;
 
+    @Schema(title = "productTypeLabel", description = "产品类型名称")
+    @TableField(exist = false)
+    private String productTypeLabel;
+
     @Schema(title = "state", description = "状态: 0-停用, 1-启用")
     private Integer state;
 
@@ -55,4 +60,3 @@ public class PayProduct extends BaseModel implements Serializable {
     @Schema(title = "updatedAt", description = "更新时间")
     private Date updatedAt;
 }
-

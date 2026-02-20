@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
 import com.jeequan.jeepay.core.entity.PayProduct;
+import com.jeequan.jeepay.core.constants.PayProductTypeEnum;
 import com.jeequan.jeepay.core.model.ApiPageRes;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
@@ -39,17 +40,24 @@ public class PayProductController extends CommonCtrl {
     public ApiRes<ApiPageRes.PageBean<PayProduct>> list() {
         IPage<PayProduct> page = getIPage(true);
         String productName = getValString("productName");
-        String productType = getValString("productType");
+        Integer productType = getValInteger("productType");
         Integer state = getValInteger("state");
 
         payProductService.page(
                 page,
                 PayProduct.gw()
                         .like(StringUtils.isNotBlank(productName), PayProduct::getProductName, productName)
-                        .eq(StringUtils.isNotBlank(productType), PayProduct::getProductType, productType)
+                        .eq(productType != null, PayProduct::getProductType, productType)
                         .eq(state != null, PayProduct::getState, state)
                         .orderByAsc(PayProduct::getCreatedAt)
         );
+
+        for (PayProduct item : page.getRecords()) {
+            PayProductTypeEnum typeEnum = PayProductTypeEnum.fromCode(item.getProductType());
+            if (typeEnum != null) {
+                item.setProductTypeLabel(typeEnum.getLabel());
+            }
+        }
         return ApiRes.page(page);
     }
 
@@ -114,4 +122,3 @@ public class PayProductController extends CommonCtrl {
         return ApiRes.ok();
     }
 }
-
