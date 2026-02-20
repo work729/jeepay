@@ -45,6 +45,13 @@ public class PayProduct extends BaseModel implements Serializable {
     @TableField(exist = false)
     private String productTypeLabel;
 
+    @Schema(title = "interfaceMode", description = "接口模式: 1-单独, 2-轮询")
+    private Integer interfaceMode;
+
+    @Schema(title = "interfaceModeLabel", description = "接口模式名称")
+    @TableField(exist = false)
+    private String interfaceModeLabel;
+
     @Schema(title = "state", description = "状态: 0-停用, 1-启用")
     private Integer state;
 

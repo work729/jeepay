@@ -7,8 +7,9 @@ package com.jeequan.jeepay.mgr.ctrl.payconfig;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
-import com.jeequan.jeepay.core.entity.PayProduct;
+import com.jeequan.jeepay.core.constants.PayProductInterfaceModeEnum;
 import com.jeequan.jeepay.core.constants.PayProductTypeEnum;
+import com.jeequan.jeepay.core.entity.PayProduct;
 import com.jeequan.jeepay.core.model.ApiPageRes;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
@@ -56,6 +57,10 @@ public class PayProductController extends CommonCtrl {
             PayProductTypeEnum typeEnum = PayProductTypeEnum.fromCode(item.getProductType());
             if (typeEnum != null) {
                 item.setProductTypeLabel(typeEnum.getLabel());
+            }
+            PayProductInterfaceModeEnum modeEnum = PayProductInterfaceModeEnum.fromCode(item.getInterfaceMode());
+            if (modeEnum != null) {
+                item.setInterfaceModeLabel(modeEnum.getLabel());
             }
         }
         return ApiRes.page(page);

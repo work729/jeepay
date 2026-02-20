@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS t_pay_product (
   id int(20) NOT NULL AUTO_INCREMENT,
   product_name VARCHAR(64) NOT NULL,
   product_type TINYINT NOT NULL,
-  interface_mode TINYINT NOT NULL,
+  interface_mode TINYINT NOT NULL default 1 COMMENT '1:单独, 2:轮旬',
   state TINYINT(6) NOT NULL DEFAULT 1,
   agent_rate DECIMAL(20,6) NOT NULL DEFAULT 0,
   mch_rate DECIMAL(20,6) NOT NULL DEFAULT 0,
