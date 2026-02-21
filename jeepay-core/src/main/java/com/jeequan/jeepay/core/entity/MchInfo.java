@@ -85,6 +85,9 @@ public class MchInfo extends BaseModel implements Serializable {
     @Schema(title = "isvNo", description = "服务商号")
     private String isvNo;
 
+    @Schema(title = "agentId", description = "代理ID")
+    private Long agentId;
+
     /**
      * 联系人姓名
      */
@@ -114,6 +117,15 @@ public class MchInfo extends BaseModel implements Serializable {
      */
     @Schema(title = "remark", description = "商户备注")
     private String remark;
+
+    @Schema(title = "rechargeRate", description = "充值费率")
+    private String rechargeRate;
+
+    @Schema(title = "telegramGroup", description = "电报群")
+    private String telegramGroup;
+
+    @Schema(title = "telegramContact", description = "电报联系方式")
+    private String telegramContact;
 
     /**
      * 初始用户ID（创建商户时，允许商户登录的用户）

@@ -14,6 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Schema(description = "支付通道表")
@@ -41,6 +42,9 @@ public class PayChannel extends BaseModel implements Serializable {
 
     @Schema(title = "ifCode", description = "接口代码")
     private String ifCode;
+
+    @Schema(title = "channelRate", description = "通道费率%")
+    private BigDecimal channelRate;
 
     @Schema(title = "state", description = "通道状态: 0-停用, 1-启用")
     private Integer state;

@@ -119,8 +119,13 @@ CREATE TABLE `t_sys_log` (
 -- 商户信息表
 DROP TABLE IF EXISTS t_mch_info;
 CREATE TABLE `t_mch_info` (
+        `id` int NOT NULL AUTO_INCREMENT,
+        `agent_id` int NOT NULL COMMENT '所属代理商',
         `mch_no` VARCHAR(64) NOT NULL COMMENT '商户号',
         `mch_name` VARCHAR(64) NOT NULL COMMENT '商户名称',
+        `recharge_rate` VARCHAR(64) NOT NULL COMMENT '线下充值费率(%)',
+        `telegram_group` VARCHAR(64) NOT NULL COMMENT '飞机群ID',
+        `telegram_contact` VARCHAR(64) NOT NULL COMMENT '飞机群联络人',
         `mch_short_name` VARCHAR(32) NOT NULL COMMENT '商户简称',
         `type` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '类型: 1-普通商户, 2-特约商户(服务商模式)',
         `isv_no` VARCHAR(64) COMMENT '服务商号',
@@ -134,8 +139,24 @@ CREATE TABLE `t_mch_info` (
         `created_by` VARCHAR(64) COMMENT '创建者姓名',
         `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
         `updated_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
-        PRIMARY KEY (`mch_no`)
+        PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户信息表';
+
+DROP TABLE IF EXISTS t_agent_info;
+CREATE TABLE `t_agent_info` (
+        `id` int NOT NULL AUTO_INCREMENT COMMENT '代理ID',
+        `agent_name` VARCHAR(64) NOT NULL COMMENT '代理名称',
+        `contact_name` VARCHAR(32) DEFAULT NULL COMMENT '联系人姓名',
+        `contact_tel` VARCHAR(32) DEFAULT NULL COMMENT '联系人手机号',
+        `contact_email` VARCHAR(64) DEFAULT NULL COMMENT '联系人邮箱',
+        `state` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '状态: 0-停用, 1-正常',
+        `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
+        `created_uid` BIGINT(20) DEFAULT NULL COMMENT '创建者用户ID',
+        `created_by` VARCHAR(64) DEFAULT NULL COMMENT '创建者姓名',
+        `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+        `updated_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+        PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='代理商信息表';
 
 -- 商户应用表
 DROP TABLE IF EXISTS t_mch_app;
@@ -535,6 +556,16 @@ insert into t_sys_entitlement values('ENT_MCH', '商户管理', 'shop', '', 'Rou
         insert into t_sys_entitlement values('ENT_MCH_PAY_PASSAGE_CONFIG', '应用支付通道配置入口', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_PAY_PASSAGE_LIST', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_PAY_PASSAGE_ADD', '应用支付通道配置保存', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_PAY_PASSAGE_LIST', '0', 'MGR', now(), now());
 
+-- 代理管理
+insert into t_sys_entitlement values('ENT_AGENT', '代理商管理', 'block', '', 'RouteView', 'ML', 0, 1,  'ROOT', '40', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_AGENT_INFO', '所有代理商', 'profile', '/agent', 'AgentListPage', 'ML', 0, 1,  'ENT_AGENT', '10', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_AGENT_LIST', '页面：代理商列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_INFO', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_AGENT_INFO_ADD', '按钮：新增', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_INFO', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_AGENT_INFO_EDIT', '按钮：编辑', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_INFO', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_AGENT_INFO_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_INFO', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_AGENT_INFO_DEL', '按钮：删除', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_INFO', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_AGENT_FINANCE', '资金流水', 'profile', '/agentFinance', 'AgentFinancePage', 'ML', 0, 1,  'ENT_AGENT_FINANCE', '10', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_AGENT_FINANCE_LIST', '页面：资金流水', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_FINANCE_INFO', '0', 'MGR', now(), now());
 -- 服务商管理
 insert into t_sys_entitlement values('ENT_ISV', '服务商管理', 'block', '', 'RouteView', 'ML', 0, 1,  'ROOT', '40', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_ISV_INFO', '服务商列表', 'profile', '/isv', 'IsvListPage', 'ML', 0, 1,  'ENT_ISV', '10', 'MGR', now(), now());
@@ -798,4 +829,3 @@ VALUES ('plspay', '计全付', 1, 0, 1,
         '[{"name":"signType","desc":"签名方式","type":"radio","verify":"required","values":"MD5,RSA2","titles":"MD5,RSA2"},{"name":"merchantNo","desc":"计全付商户号","type":"text","verify":"required"},{"name":"appId","desc":"应用ID","type":"text","verify":"required"},{"name":"appSecret","desc":"md5秘钥","type":"textarea","verify":"required","star":"1"},{"name":"rsa2AppPrivateKey","desc":"RSA2: 应用私钥","type":"textarea","verify":"required","star":"1"},{"name":"rsa2PayPublicKey","desc":"RSA2: 支付网关公钥","type":"textarea","verify":"required","star":"1"}]',
         '[{"wayCode": "ALI_APP"}, {"wayCode": "ALI_BAR"}, {"wayCode": "ALI_JSAPI"}, {"wayCode": "ALI_LITE"}, {"wayCode": "ALI_PC"}, {"wayCode": "ALI_QR"}, {"wayCode": "ALI_WAP"}, {"wayCode": "WX_APP"}, {"wayCode": "WX_BAR"}, {"wayCode": "WX_H5"}, {"wayCode": "WX_JSAPI"}, {"wayCode": "WX_LITE"}, {"wayCode": "WX_NATIVE"}]',
         'http://jeequan.oss-cn-beijing.aliyuncs.com/jeepay/img/plspay.svg', '#0CACFF', 1, '计全付');
-
