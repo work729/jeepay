@@ -2,10 +2,14 @@ package com.jeequan.jeepay.mgr.ctrl.merchant;
 
 import com.alibaba.fastjson.JSONArray;
 import com.jeequan.jeepay.core.aop.MethodLog;
+import com.jeequan.jeepay.core.entity.MchInfo;
 import com.jeequan.jeepay.core.entity.MchPayProduct;
+import com.jeequan.jeepay.core.entity.PayProduct;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
+import com.jeequan.jeepay.service.impl.MchInfoService;
 import com.jeequan.jeepay.service.impl.MchPayProductService;
+import com.jeequan.jeepay.service.impl.PayProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -31,6 +35,12 @@ public class MchPayProductController extends CommonCtrl {
     @Autowired
     private MchPayProductService mchPayProductService;
 
+    @Autowired
+    private MchInfoService mchInfoService;
+
+    @Autowired
+    private PayProductService payProductService;
+
     @Operation(summary = "查询商户已配置支付产品ID列表")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
@@ -49,6 +59,40 @@ public class MchPayProductController extends CommonCtrl {
                 .map(MchPayProduct::getProductId)
                 .collect(Collectors.toList());
         return ApiRes.ok(productIdList);
+    }
+
+    @Operation(summary = "根据支付产品查询已关联商户列表")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "productId", description = "支付产品ID", required = true)
+    })
+    @PreAuthorize("hasAnyAuthority('ENT_PC_IF_DEFINE_VIEW', 'ENT_PC_IF_DEFINE_EDIT')")
+    @GetMapping("/by-product/{productId}")
+    public ApiRes<List<MchInfo>> listByProduct(@PathVariable("productId") Long productId) {
+        List<MchPayProduct> relations = mchPayProductService.list(
+                MchPayProduct.gw().eq(MchPayProduct::getProductId, productId)
+        );
+        if (relations.isEmpty()) {
+            return ApiRes.ok(Collections.emptyList());
+        }
+        List<String> mchNoList = relations.stream()
+                .map(MchPayProduct::getMchNo)
+                .collect(Collectors.toList());
+        List<MchInfo> mchList = mchInfoService.list(
+                MchInfo.gw().in(MchInfo::getMchNo, mchNoList)
+        );
+        PayProduct payProduct = payProductService.getById(productId);
+        for (MchInfo mchInfo : mchList) {
+            mchInfo.addExt("productId", productId);
+            if (payProduct != null) {
+                mchInfo.addExt("mchRate", payProduct.getMchRate());
+            }
+            if (mchInfo.getState() != null) {
+                String stateLabel = mchInfo.getState() == 1 ? "启用" : "停用";
+                mchInfo.addExt("stateLabel", stateLabel);
+            }
+        }
+        return ApiRes.ok(mchList);
     }
 
     @Operation(summary = "更新商户支付产品关联关系")
@@ -80,4 +124,3 @@ public class MchPayProductController extends CommonCtrl {
         return ApiRes.ok();
     }
 }
-
