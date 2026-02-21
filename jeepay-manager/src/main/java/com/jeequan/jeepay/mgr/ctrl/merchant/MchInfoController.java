@@ -30,6 +30,7 @@ import com.jeequan.jeepay.core.entity.SysUser;
 import com.jeequan.jeepay.core.model.ApiPageRes;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
+import com.jeequan.jeepay.service.impl.MchAccountChangeService;
 import com.jeequan.jeepay.service.impl.MchInfoService;
 import com.jeequan.jeepay.service.impl.SysUserAuthService;
 import com.jeequan.jeepay.service.impl.SysUserService;
@@ -64,6 +65,7 @@ import java.util.Set;
 public class MchInfoController extends CommonCtrl {
 
     @Autowired private MchInfoService mchInfoService;
+    @Autowired private MchAccountChangeService mchAccountChangeService;
     @Autowired private SysUserService sysUserService;
     @Autowired private SysUserAuthService sysUserAuthService;
     @Autowired private IMQSender mqSender;
@@ -266,5 +268,45 @@ public class MchInfoController extends CommonCtrl {
             mchInfo.addExt("loginUserName", sysUser.getLoginUsername());
         }
         return ApiRes.ok(mchInfo);
+    }
+
+    @Operation(summary = "商户账户余额变更", description = "")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "mchNo", description = "商户号", required = true),
+            @Parameter(name = "accountType", description = "账户类型: BALANCE-账户余额,PAYOUT_QUOTA-代付额度", required = true),
+            @Parameter(name = "amount", description = "变更金额,单位元", required = true),
+            @Parameter(name = "direction", description = "变更方向: INCREASE-增加,DECREASE-减少", required = true),
+            @Parameter(name = "remark", description = "备注")
+    })
+    @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
+    @MethodLog(remark = "商户账户余额变更")
+    @RequestMapping(value = "/accountChange", method = RequestMethod.POST)
+    public ApiRes accountChange() {
+        String mchNo = getValStringRequired("mchNo");
+        String accountTypeStr = getValStringRequired("accountType");
+        String directionStr = getValStringRequired("direction");
+        Long amountYuan = getValLongRequired("amount");
+        long amount = amountYuan * 100;
+        byte accountType;
+        if ("BALANCE".equalsIgnoreCase(accountTypeStr)) {
+            accountType = MchAccountChangeService.ACCOUNT_TYPE_BALANCE;
+        } else if ("PAYOUT_QUOTA".equalsIgnoreCase(accountTypeStr)) {
+            accountType = MchAccountChangeService.ACCOUNT_TYPE_PAYOUT_QUOTA;
+        } else {
+            return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_SELETE);
+        }
+        byte direction;
+        if ("INCREASE".equalsIgnoreCase(directionStr)) {
+            direction = MchAccountChangeService.DIRECTION_INCREASE;
+        } else if ("DECREASE".equalsIgnoreCase(directionStr)) {
+            direction = MchAccountChangeService.DIRECTION_DECREASE;
+        } else {
+            return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_SELETE);
+        }
+        SysUser sysUser = getCurrentUser().getSysUser();
+        String remark = getValString("remark");
+        mchAccountChangeService.changeAccount(mchNo, accountType, direction, amount, sysUser.getSysUserId(), sysUser.getRealname(), remark);
+        return ApiRes.ok();
     }
 }

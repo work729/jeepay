@@ -134,6 +134,8 @@ CREATE TABLE `t_mch_info` (
         `contact_email` VARCHAR(32) COMMENT '联系人邮箱',
         `state` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '商户状态: 0-停用, 1-正常',
         `remark` VARCHAR(128) COMMENT '商户备注',
+        `account_balance` DECIMAL NOT NULL DEFAULT 0 COMMENT '商户账户余额,单位分',
+        `payout_quota` DECIMAL NOT NULL DEFAULT 0 COMMENT '商户代付额度,单位分',
         `init_user_id` BIGINT(20) DEFAULT NULL COMMENT '初始用户ID（创建商户时，允许商户登录的用户）',
         `created_uid` BIGINT(20) COMMENT '创建者用户ID',
         `created_by` VARCHAR(64) COMMENT '创建者姓名',
@@ -141,6 +143,23 @@ CREATE TABLE `t_mch_info` (
         `updated_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
         PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户信息表';
+
+DROP TABLE IF EXISTS `t_mch_account_change_log`;
+CREATE TABLE `t_mch_account_change_log` (
+        `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+        `mch_no` VARCHAR(64) NOT NULL COMMENT '商户号',
+        `account_type` TINYINT(6) NOT NULL COMMENT '账户类型: 1-账户余额,2-代付额度',
+        `change_direction` TINYINT(6) NOT NULL COMMENT '变动方向: 1-增加,2-减少',
+        `amount` BIGINT(20) NOT NULL COMMENT '变动金额,单位分',
+        `before_amount` BIGINT(20) NOT NULL COMMENT '变动前金额,单位分',
+        `after_amount` BIGINT(20) NOT NULL COMMENT '变动后金额,单位分',
+        `operator_id` BIGINT(20) DEFAULT NULL COMMENT '操作员ID',
+        `operator_name` VARCHAR(64) DEFAULT NULL COMMENT '操作员姓名',
+        `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
+        `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+        PRIMARY KEY (`id`),
+        KEY `idx_mch_created` (`mch_no`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户账户变动记录表';
 
 DROP TABLE IF EXISTS t_agent_info;
 CREATE TABLE `t_agent_info` (
@@ -567,7 +586,7 @@ insert into t_sys_entitlement values('ENT_AGENT', '代理商管理', 'block', ''
     insert into t_sys_entitlement values('ENT_AGENT_FINANCE', '资金流水', 'profile', '/agentFinance', 'AgentFinancePage', 'ML', 0, 1,  'ENT_AGENT_FINANCE', '10', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_AGENT_FINANCE_LIST', '页面：资金流水', 'no-icon', '', '', 'PB', 0, 1,  'ENT_AGENT_FINANCE_INFO', '0', 'MGR', now(), now());
 -- 服务商管理
-insert into t_sys_entitlement values('ENT_ISV', '服务商管理', 'block', '', 'RouteView', 'ML', 0, 1,  'ROOT', '40', 'MGR', now(), now());
+/*insert into t_sys_entitlement values('ENT_ISV', '服务商管理', 'block', '', 'RouteView', 'ML', 0, 1,  'ROOT', '40', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_ISV_INFO', '服务商列表', 'profile', '/isv', 'IsvListPage', 'ML', 0, 1,  'ENT_ISV', '10', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_ISV_LIST', '页面：服务商列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_INFO', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_ISV_INFO_ADD', '按钮：新增', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_INFO', '0', 'MGR', now(), now());
@@ -576,7 +595,7 @@ insert into t_sys_entitlement values('ENT_ISV', '服务商管理', 'block', '', 
         insert into t_sys_entitlement values('ENT_ISV_INFO_DEL', '按钮：删除', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_INFO', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_ISV_PAY_CONFIG_LIST', '服务商支付参数配置列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_INFO', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_ISV_PAY_CONFIG_ADD', '服务商支付参数配置', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_PAY_CONFIG_LIST', '0', 'MGR', now(), now());
-        insert into t_sys_entitlement values('ENT_ISV_PAY_CONFIG_VIEW', '服务商支付参数配置详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_PAY_CONFIG_LIST', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_ISV_PAY_CONFIG_VIEW', '服务商支付参数配置详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ISV_PAY_CONFIG_LIST', '0', 'MGR', now(), now());*/
 
 -- 订单管理
 insert into t_sys_entitlement values('ENT_ORDER', '订单管理', 'transaction', '', 'RouteView', 'ML', 0, 1,  'ROOT', '50', 'MGR', now(), now());

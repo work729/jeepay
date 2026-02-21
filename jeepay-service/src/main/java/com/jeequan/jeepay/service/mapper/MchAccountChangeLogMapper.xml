@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeequan.jeepay.service.mapper.MchAccountChangeLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.jeequan.jeepay.core.entity.MchAccountChangeLog">
+        <id column="id" property="id" />
+        <result column="mch_no" property="mchNo" />
+        <result column="account_type" property="accountType" />
+        <result column="change_direction" property="changeDirection" />
+        <result column="amount" property="amount" />
+        <result column="before_amount" property="beforeAmount" />
+        <result column="after_amount" property="afterAmount" />
+        <result column="operator_id" property="operatorId" />
+        <result column="operator_name" property="operatorName" />
+        <result column="remark" property="remark" />
+        <result column="created_at" property="createdAt" />
+    </resultMap>
+
+</mapper>
+
