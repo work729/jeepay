@@ -1,0 +1,83 @@
+package com.jeequan.jeepay.mgr.ctrl.merchant;
+
+import com.alibaba.fastjson.JSONArray;
+import com.jeequan.jeepay.core.aop.MethodLog;
+import com.jeequan.jeepay.core.entity.MchPayProduct;
+import com.jeequan.jeepay.core.model.ApiRes;
+import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
+import com.jeequan.jeepay.service.impl.MchPayProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Tag(name = "商户支付产品关联管理")
+@RestController
+@RequestMapping("/api/mch/payProducts")
+public class MchPayProductController extends CommonCtrl {
+
+    @Autowired
+    private MchPayProductService mchPayProductService;
+
+    @Operation(summary = "查询商户已配置支付产品ID列表")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "mchNo", description = "商户号", required = true)
+    })
+    @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
+    @GetMapping("/{mchNo}")
+    public ApiRes<List<Long>> list(@PathVariable("mchNo") String mchNo) {
+        List<MchPayProduct> relations = mchPayProductService.list(
+                MchPayProduct.gw().eq(MchPayProduct::getMchNo, mchNo)
+        );
+        if (relations.isEmpty()) {
+            return ApiRes.ok(Collections.emptyList());
+        }
+        List<Long> productIdList = relations.stream()
+                .map(MchPayProduct::getProductId)
+                .collect(Collectors.toList());
+        return ApiRes.ok(productIdList);
+    }
+
+    @Operation(summary = "更新商户支付产品关联关系")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "mchNo", description = "商户号", required = true),
+            @Parameter(name = "productIdListStr", description = "支付产品ID列表，eg：[1,2,3]，字符串列表转成json字符串", required = true)
+    })
+    @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
+    @PostMapping("/relas/{mchNo}")
+    @MethodLog(remark = "更新商户支付产品关联关系")
+    public ApiRes relas(@PathVariable("mchNo") String mchNo) {
+        List<Long> productIdList = JSONArray.parseArray(getValStringRequired("productIdListStr"), Long.class);
+
+        mchPayProductService.remove(
+                MchPayProduct.gw().eq(MchPayProduct::getMchNo, mchNo)
+        );
+
+        if (!productIdList.isEmpty()) {
+            List<MchPayProduct> list = productIdList.stream().map(productId -> {
+                MchPayProduct item = new MchPayProduct();
+                item.setMchNo(mchNo);
+                item.setProductId(productId);
+                return item;
+            }).collect(Collectors.toList());
+            mchPayProductService.saveBatch(list);
+        }
+
+        return ApiRes.ok();
+    }
+}
+

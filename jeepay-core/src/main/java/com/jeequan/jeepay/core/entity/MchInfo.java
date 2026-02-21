@@ -123,7 +123,7 @@ public class MchInfo extends BaseModel implements Serializable {
     private String remark;
 
     @Schema(title = "accountBalance", description = "商户账户余额,单位分")
-    @TableField("balance")
+    @TableField("account_balance")
     private Long accountBalance;
 
     @Schema(title = "payoutQuota", description = "商户代付额度,单位分")
