@@ -53,6 +53,9 @@ public class MchInfo extends BaseModel implements Serializable {
     public static final byte TYPE_NORMAL = 1; //商户类型： 1-普通商户
     public static final byte TYPE_ISVSUB = 2; //商户类型： 2-特约商户
 
+    @Schema(title = "id", description = "主键ID")
+    private Long id;
+
 
     /**
      * 商户号

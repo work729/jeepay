@@ -103,4 +103,19 @@ public class AuthController extends CommonCtrl {
 		return ApiRes.ok(result);
 	}
 
+	/** 根据商户号生成登录token（运营平台单点登录使用） **/
+	@Operation(summary = "根据商户号生成登录token（运营平台单点登录使用）")
+	@Parameters({
+			@Parameter(name = "mchNo", description = "商户号", required = true)
+	})
+	@RequestMapping(value = "/ssoLoginMch", method = RequestMethod.POST)
+	public ApiRes ssoLoginMch() throws BizException {
+
+		String mchNo = getValStringRequired("mchNo");
+
+		String accessToken = authService.authByMchNo(mchNo);
+
+		return ApiRes.ok4newJson(CS.ACCESS_TOKEN_NAME, accessToken);
+	}
+
 }

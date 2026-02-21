@@ -96,34 +96,8 @@ public class AuthService {
 
         SysUser sysUser = jeeUserDetails.getSysUser();
 
-        //非超级管理员 && 不包含左侧菜单 进行错误提示
-        if(sysUser.getIsAdmin() != CS.YES && sysEntitlementMapper.userHasLeftMenu(sysUser.getSysUserId(), CS.SYS_TYPE.MCH) <= 0){
-            throw new BizException("当前用户未分配任何菜单权限，请联系管理员进行分配后再登录！");
-        }
-
-        // 查询当前用户的商户信息
-        MchInfo mchInfo = mchInfoService.getById(sysUser.getBelongInfoId());
-        if (mchInfo != null) {
-            // 判断当前商户状态是否可用
-            if (mchInfo.getState() == CS.NO) {
-                throw new BizException("当前商户状态不可用！");
-            }
-        }
-        // 放置权限集合
-        jeeUserDetails.setAuthorities(getUserAuthority(sysUser));
-
-        //生成token
-        String cacheKey = CS.getCacheKeyToken(sysUser.getSysUserId(), IdUtil.fastUUID());
-
-        //生成iToken 并放置到缓存
-        ITokenService.processTokenCache(jeeUserDetails, cacheKey); //处理token 缓存信息
-
-        //将信息放置到Spring-security context中
-        UsernamePasswordAuthenticationToken authenticationRest = new UsernamePasswordAuthenticationToken(jeeUserDetails, null, jeeUserDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authenticationRest);
-
-        //返回JWTToken
-        return JWTUtils.generateToken(new JWTPayload(jeeUserDetails), systemYmlConfig.getJwtSecret());
+        // 生成并返回token
+        return generateTokenBySysUser(sysUser);
     }
 
     /** 根据用户ID 更新缓存中的权限集合， 使得分配实时生效  **/
@@ -201,6 +175,63 @@ public class AuthService {
         roleList.stream().forEach(role -> grantedAuthorities.add(new SimpleGrantedAuthority(role)));
         entList.stream().forEach(ent -> grantedAuthorities.add(new SimpleGrantedAuthority(ent)));
         return grantedAuthorities;
+    }
+
+    /**
+     * 根据商户号生成商户管理员登录token（用于运营平台单点登录）
+     * */
+    public String authByMchNo(String mchNo) {
+
+        SysUser adminUser = sysUserService.getOne(
+                SysUser.gw()
+                        .eq(SysUser::getBelongInfoId, mchNo)
+                        .eq(SysUser::getSysType, CS.SYS_TYPE.MCH)
+                        .eq(SysUser::getIsAdmin, CS.YES)
+        );
+
+        if (adminUser == null) {
+            throw new BizException("当前商户未配置管理员用户");
+        }
+
+        return generateTokenBySysUser(adminUser);
+    }
+
+    /**
+     * 根据系统用户直接生成登录token
+     * */
+    private String generateTokenBySysUser(SysUser sysUser) {
+
+        //非超级管理员 && 不包含左侧菜单 进行错误提示
+        if(sysUser.getIsAdmin() != CS.YES && sysEntitlementMapper.userHasLeftMenu(sysUser.getSysUserId(), CS.SYS_TYPE.MCH) <= 0){
+            throw new BizException("当前用户未分配任何菜单权限，请联系管理员进行分配后再登录！");
+        }
+
+        // 查询当前用户的商户信息
+        MchInfo mchInfo = mchInfoService.getById(sysUser.getBelongInfoId());
+        if (mchInfo != null) {
+            // 判断当前商户状态是否可用
+            if (mchInfo.getState() == CS.NO) {
+                throw new BizException("当前商户状态不可用！");
+            }
+        }
+
+        JeeUserDetails jeeUserDetails = new JeeUserDetails(sysUser, null);
+
+        // 放置权限集合
+        jeeUserDetails.setAuthorities(getUserAuthority(sysUser));
+
+        //生成token
+        String cacheKey = CS.getCacheKeyToken(sysUser.getSysUserId(), IdUtil.fastUUID());
+
+        //生成iToken 并放置到缓存
+        ITokenService.processTokenCache(jeeUserDetails, cacheKey); //处理token 缓存信息
+
+        //将信息放置到Spring-security context中
+        UsernamePasswordAuthenticationToken authenticationRest = new UsernamePasswordAuthenticationToken(jeeUserDetails, null, jeeUserDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authenticationRest);
+
+        //返回JWTToken
+        return JWTUtils.generateToken(new JWTPayload(jeeUserDetails), systemYmlConfig.getJwtSecret());
     }
 
 
