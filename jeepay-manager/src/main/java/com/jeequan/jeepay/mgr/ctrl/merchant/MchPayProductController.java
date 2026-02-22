@@ -44,13 +44,13 @@ public class MchPayProductController extends CommonCtrl {
     @Operation(summary = "查询商户已配置支付产品列表")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "mchNo", description = "商户号", required = true)
+            @Parameter(name = "mchId", description = "商户ID", required = true)
     })
     @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
-    @GetMapping("/{mchNo}")
-    public ApiRes<List<MchPayProduct>> list(@PathVariable("mchNo") String mchNo) {
+    @GetMapping("/{mchId}")
+    public ApiRes<List<MchPayProduct>> list(@PathVariable("mchId") Long mchId) {
         List<MchPayProduct> relations = mchPayProductService.list(
-                MchPayProduct.gw().eq(MchPayProduct::getMchNo, mchNo)
+                MchPayProduct.gw().eq(MchPayProduct::getMchId, mchId)
         );
         return ApiRes.ok(relations);
     }
@@ -69,11 +69,11 @@ public class MchPayProductController extends CommonCtrl {
         if (relations.isEmpty()) {
             return ApiRes.ok(Collections.emptyList());
         }
-        List<String> mchNoList = relations.stream()
-                .map(MchPayProduct::getMchNo)
+        List<Long> mchIdList = relations.stream()
+                .map(MchPayProduct::getMchId)
                 .collect(Collectors.toList());
         List<MchInfo> mchList = mchInfoService.list(
-                MchInfo.gw().in(MchInfo::getMchNo, mchNoList)
+                MchInfo.gw().in(MchInfo::getId, mchIdList)
         );
         PayProduct payProduct = payProductService.getById(productId);
         for (MchInfo mchInfo : mchList) {
@@ -92,21 +92,21 @@ public class MchPayProductController extends CommonCtrl {
     @Operation(summary = "更新商户支付产品关联关系")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "mchNo", description = "商户号", required = true),
+            @Parameter(name = "mchId", description = "商户ID", required = true),
             @Parameter(name = "relaListStr", description = "关联关系列表，eg：[{'productId':1,'mchRate':1.5,'state':1}]", required = true)
     })
     @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
-    @PostMapping("/relas/{mchNo}")
+    @PostMapping("/relas/{mchId}")
     @MethodLog(remark = "更新商户支付产品关联关系")
-    public ApiRes relas(@PathVariable("mchNo") String mchNo) {
+    public ApiRes relas(@PathVariable("mchId") Long mchId) {
         List<MchPayProduct> relaList = JSONArray.parseArray(getValStringRequired("relaListStr"), MchPayProduct.class);
 
         mchPayProductService.remove(
-                MchPayProduct.gw().eq(MchPayProduct::getMchNo, mchNo)
+                MchPayProduct.gw().eq(MchPayProduct::getMchId, mchId)
         );
 
         if (!relaList.isEmpty()) {
-            relaList.forEach(item -> item.setMchNo(mchNo));
+            relaList.forEach(item -> item.setMchId(mchId));
             mchPayProductService.saveBatch(relaList);
         }
 

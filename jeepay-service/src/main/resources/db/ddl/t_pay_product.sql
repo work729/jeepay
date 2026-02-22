@@ -24,13 +24,13 @@ CREATE TABLE IF NOT EXISTS t_pay_product_channel (
 
 CREATE TABLE IF NOT EXISTS t_mch_pay_product (
   id int NOT NULL AUTO_INCREMENT,
-  mch_no VARCHAR(64) NOT NULL,
+  mch_id int NOT NULL,
   product_id int NOT NULL,
   mch_rate DECIMAL(20,6) NOT NULL DEFAULT 0,
   state TINYINT(6) NOT NULL DEFAULT 1,
   created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  KEY idx_mch_no (mch_no),
+  KEY idx_mch_id (mch_id),
   KEY idx_product_id (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

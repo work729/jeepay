@@ -31,8 +31,8 @@ public class MchPayProduct extends BaseModel implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @Schema(title = "mchNo", description = "商户号")
-    private String mchNo;
+    @Schema(title = "mchId", description = "商户ID")
+    private Long mchId;
 
     @Schema(title = "productId", description = "支付产品ID")
     private Long productId;
