@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Schema(description = "商户支付产品关联表")
@@ -36,10 +37,15 @@ public class MchPayProduct extends BaseModel implements Serializable {
     @Schema(title = "productId", description = "支付产品ID")
     private Long productId;
 
+    @Schema(title = "mchRate", description = "商户费率(%)")
+    private BigDecimal mchRate;
+
+    @Schema(title = "state", description = "状态：0-禁用,1-启用")
+    private Byte state;
+
     @Schema(title = "createdAt", description = "创建时间")
     private Date createdAt;
 
     @Schema(title = "updatedAt", description = "更新时间")
     private Date updatedAt;
 }
-

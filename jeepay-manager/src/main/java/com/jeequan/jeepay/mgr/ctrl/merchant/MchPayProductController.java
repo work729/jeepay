@@ -41,24 +41,18 @@ public class MchPayProductController extends CommonCtrl {
     @Autowired
     private PayProductService payProductService;
 
-    @Operation(summary = "查询商户已配置支付产品ID列表")
+    @Operation(summary = "查询商户已配置支付产品列表")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "mchNo", description = "商户号", required = true)
     })
     @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
     @GetMapping("/{mchNo}")
-    public ApiRes<List<Long>> list(@PathVariable("mchNo") String mchNo) {
+    public ApiRes<List<MchPayProduct>> list(@PathVariable("mchNo") String mchNo) {
         List<MchPayProduct> relations = mchPayProductService.list(
                 MchPayProduct.gw().eq(MchPayProduct::getMchNo, mchNo)
         );
-        if (relations.isEmpty()) {
-            return ApiRes.ok(Collections.emptyList());
-        }
-        List<Long> productIdList = relations.stream()
-                .map(MchPayProduct::getProductId)
-                .collect(Collectors.toList());
-        return ApiRes.ok(productIdList);
+        return ApiRes.ok(relations);
     }
 
     @Operation(summary = "根据支付产品查询已关联商户列表")
@@ -99,26 +93,21 @@ public class MchPayProductController extends CommonCtrl {
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "mchNo", description = "商户号", required = true),
-            @Parameter(name = "productIdListStr", description = "支付产品ID列表，eg：[1,2,3]，字符串列表转成json字符串", required = true)
+            @Parameter(name = "relaListStr", description = "关联关系列表，eg：[{'productId':1,'mchRate':1.5,'state':1}]", required = true)
     })
     @PreAuthorize("hasAuthority('ENT_MCH_INFO_EDIT')")
     @PostMapping("/relas/{mchNo}")
     @MethodLog(remark = "更新商户支付产品关联关系")
     public ApiRes relas(@PathVariable("mchNo") String mchNo) {
-        List<Long> productIdList = JSONArray.parseArray(getValStringRequired("productIdListStr"), Long.class);
+        List<MchPayProduct> relaList = JSONArray.parseArray(getValStringRequired("relaListStr"), MchPayProduct.class);
 
         mchPayProductService.remove(
                 MchPayProduct.gw().eq(MchPayProduct::getMchNo, mchNo)
         );
 
-        if (!productIdList.isEmpty()) {
-            List<MchPayProduct> list = productIdList.stream().map(productId -> {
-                MchPayProduct item = new MchPayProduct();
-                item.setMchNo(mchNo);
-                item.setProductId(productId);
-                return item;
-            }).collect(Collectors.toList());
-            mchPayProductService.saveBatch(list);
+        if (!relaList.isEmpty()) {
+            relaList.forEach(item -> item.setMchNo(mchNo));
+            mchPayProductService.saveBatch(relaList);
         }
 
         return ApiRes.ok();
