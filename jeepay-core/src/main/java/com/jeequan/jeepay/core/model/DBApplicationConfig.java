@@ -33,17 +33,17 @@ import java.io.Serializable;
 @Data
 public class DBApplicationConfig implements Serializable {
 
-    /** 运营系统地址 **/
     private String mgrSiteUrl;
 
-    /** 商户系统地址 **/
     private String mchSiteUrl;
 
-    /** 支付网关地址 **/
     private String paySiteUrl;
 
-    /** oss公共读文件地址 **/
     private String ossPublicSiteUrl;
+
+    private String testMchNo;
+
+    private String testProductId;
 
     /** 生成  【jsapi统一收银台跳转地址】 **/
     public String genUniJsapiPayUrl(Byte type, String id){

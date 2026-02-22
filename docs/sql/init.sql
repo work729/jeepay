@@ -771,9 +771,11 @@ insert into t_sys_user_auth values (801, '801', '1', 'jeepay', '$2a$10$WKuPJKE1X
 -- insert into t_sys_user_role_rela values (801, 801);
 
 INSERT INTO `t_sys_config` VALUES ('mgrSiteUrl', '运营平台网址(不包含结尾/)', '运营平台网址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9217', 'text', 0, '2021-5-18 14:46:10');
-INSERT INTO `t_sys_config` VALUES ('mchSiteUrl', '商户平台网址(不包含结尾/)', '商户平台网址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9218', 'text', 0, '2021-5-18 14:46:10');
-INSERT INTO `t_sys_config` VALUES ('paySiteUrl', '支付网关地址(不包含结尾/)', '支付网关地址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9216', 'text', 0, '2021-5-18 14:46:10');
-INSERT INTO `t_sys_config` VALUES ('ossPublicSiteUrl', '公共oss访问地址(不包含结尾/)', '公共oss访问地址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9217/api/anon/localOssFiles', 'text', 0, '2021-5-18 14:46:10');
+INSERT INTO `t_sys_config` VALUES ('mchSiteUrl', '商户平台网址(不包含结尾/)', '商户平台网址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9218', 'text', 1, '2021-5-18 14:46:10');
+INSERT INTO `t_sys_config` VALUES ('paySiteUrl', '支付网关地址(不包含结尾/)', '支付网关地址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9216', 'text', 2, '2021-5-18 14:46:10');
+INSERT INTO `t_sys_config` VALUES ('ossPublicSiteUrl', '公共oss访问地址(不包含结尾/)', '公共oss访问地址(不包含结尾/)', 'applicationConfig', '系统应用配置', 'http://127.0.0.1:9217/api/anon/localOssFiles', 'text', 3, '2021-5-18 14:46:10');
+INSERT INTO `t_sys_config` VALUES ('testMchNo', '测试商户号', '支付测试页面默认使用的测试商户号', 'applicationConfig', '系统应用配置', '', 'text', 4, '2021-5-18 14:46:10');
+INSERT INTO `t_sys_config` VALUES ('testProductId', '测试产品ID', '支付测试页面默认使用的测试产品ID', 'applicationConfig', '系统应用配置', '', 'text', 5, '2021-5-18 14:46:10');
 
 
 -- 初始化支付方式
