@@ -15,6 +15,7 @@
  */
 package com.jeequan.jeepay.pay.rqrs.payorder.payway;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRQ;
 import lombok.Data;
@@ -29,7 +30,7 @@ import lombok.Data;
 @Data
 public class AutoBarOrderRQ extends UnifiedOrderRQ {
 
-    /** 条码值 **/
+    @JSONField(name = "auth_code")
     private String authCode;
 
     /** 构造函数 **/

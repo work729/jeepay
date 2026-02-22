@@ -15,6 +15,7 @@
  */
 package com.jeequan.jeepay.pay.rqrs.payorder.payway;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.pay.rqrs.payorder.CommonPayDataRQ;
 import lombok.Data;
@@ -31,8 +32,8 @@ import jakarta.validation.constraints.NotBlank;
 @Data
 public class UpBarOrderRQ extends CommonPayDataRQ {
 
-    /** 用户 支付条码 **/
     @NotBlank(message = "支付条码不能为空")
+    @JSONField(name = "auth_code")
     private String authCode;
 
     /** 构造函数 **/

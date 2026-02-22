@@ -54,7 +54,6 @@ public abstract class ApiController extends AbstractCtrl {
     }
 
 
-    /** 获取请求参数并转换为对象，商户通用验证  **/
     protected <T extends AbstractRQ> T getRQByWithMchSign(Class<T> cls){
 
         //获取请求RQ, and 通用验证
@@ -66,9 +65,14 @@ public abstract class ApiController extends AbstractCtrl {
         String mchNo = abstractMchAppRQ.getMchNo();
         String appId = abstractMchAppRQ.getAppId();
         String sign = bizRQ.getSign();
+        String signType = bizRQ.getSignType();
 
-        if(StringUtils.isAnyBlank(mchNo, appId, sign)){
+        if(StringUtils.isAnyBlank(mchNo, appId, sign, signType)){
             throw new BizException("参数有误！");
+        }
+
+        if(!"MD5".equalsIgnoreCase(signType)){
+            throw new BizException("签名类型有误");
         }
 
         MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(mchNo, appId);
