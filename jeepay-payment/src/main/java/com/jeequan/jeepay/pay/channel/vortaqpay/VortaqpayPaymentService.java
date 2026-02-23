@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Slf4j
@@ -48,6 +49,8 @@ public class VortaqpayPaymentService extends AbstractPaymentService {
     @Override
     public AbstractRS pay(UnifiedOrderRQ rq, PayOrder payOrder, MchAppConfigContext mchAppConfigContext) throws Exception {
         VortaqpayNormalMchParams params = null;
+        String headerAppId = null;
+        String headerApiVersion = "1.0";
 
         PayChannel payChannel = payChannelService.getOne(
                 PayChannel.gw()
@@ -73,6 +76,9 @@ public class VortaqpayPaymentService extends AbstractPaymentService {
                 }
                 params.setPayUrl(base + path);
             }
+
+            headerAppId = cfg.getString("APP_ID");
+            headerApiVersion = StringUtils.defaultIfBlank(cfg.getString("ApiVersion"), headerApiVersion);
         }
 
         if (params == null) {
@@ -82,6 +88,10 @@ public class VortaqpayPaymentService extends AbstractPaymentService {
 
         if (params == null) {
             throw new BizException("Vortaqpay商户参数未配置");
+        }
+
+        if (StringUtils.isBlank(headerAppId)) {
+            throw new BizException("Vortaqpay通道AppId未配置");
         }
 
         Map<String, Object> data = new HashMap<>();
@@ -103,16 +113,23 @@ public class VortaqpayPaymentService extends AbstractPaymentService {
         data.put("signature", sign);
 
         JSONObject body = new JSONObject();
-        body.put("merchant_no", params.getMerchantNo());
+        JSONObject cfg = JSONObject.parseObject(payChannel.getChannelSignConfig());
+        body.put("merchant_no", cfg.getString("MERCHANT_NO"));
         body.put("data", data);
 
         String url = VortaqpayKit.getPaymentUrl(params.getPayUrl());
         String resStr = "";
+        String noncestr = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 100000000));
+        String timestamp = String.valueOf(System.currentTimeMillis());
         try {
             log.info("vortaqpay request url:{}, body:{}", url, body.toJSONString());
             resStr = HttpUtil.createPost(url)
                     .timeout(60 * 1000)
                     .header("Content-Type", "application/json")
+                    .header("ApiVersion", headerApiVersion)
+                    .header("AppId", headerAppId)
+                    .header("Noncestr", noncestr)
+                    .header("Timestamp", timestamp)
                     .body(body.toJSONString())
                     .execute()
                     .body();
