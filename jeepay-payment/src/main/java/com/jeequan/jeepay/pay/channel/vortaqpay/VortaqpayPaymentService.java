@@ -3,15 +3,19 @@ package com.jeequan.jeepay.pay.channel.vortaqpay;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.jeequan.jeepay.core.constants.CS;
+import com.jeequan.jeepay.core.entity.PayChannel;
 import com.jeequan.jeepay.core.entity.PayOrder;
+import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.params.vortaqpay.VortaqpayNormalMchParams;
 import com.jeequan.jeepay.core.utils.AmountUtil;
 import com.jeequan.jeepay.pay.channel.AbstractPaymentService;
 import com.jeequan.jeepay.pay.model.MchAppConfigContext;
 import com.jeequan.jeepay.pay.rqrs.AbstractRS;
 import com.jeequan.jeepay.pay.rqrs.msg.ChannelRetMsg;
-import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRS;
+import com.jeequan.jeepay.pay.rqrs.payorder.CommonPayDataRS;
 import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRQ;
+import com.jeequan.jeepay.pay.util.ApiResBuilder;
+import com.jeequan.jeepay.service.impl.PayChannelService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,9 @@ import java.util.Map;
 @Service
 @Slf4j
 public class VortaqpayPaymentService extends AbstractPaymentService {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private PayChannelService payChannelService;
 
     @Override
     public String getIfCode() {
@@ -40,8 +47,42 @@ public class VortaqpayPaymentService extends AbstractPaymentService {
 
     @Override
     public AbstractRS pay(UnifiedOrderRQ rq, PayOrder payOrder, MchAppConfigContext mchAppConfigContext) throws Exception {
-        VortaqpayNormalMchParams params = (VortaqpayNormalMchParams) configContextQueryService
-                .queryNormalMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), getIfCode());
+        VortaqpayNormalMchParams params = null;
+
+        PayChannel payChannel = payChannelService.getOne(
+                PayChannel.gw()
+                        .eq(PayChannel::getIfCode, getIfCode())
+                        .eq(PayChannel::getState, CS.PUB_USABLE)
+                        .last("limit 1")
+        );
+
+        if (payChannel != null && StringUtils.isNotBlank(payChannel.getChannelSignConfig())) {
+            JSONObject cfg = JSONObject.parseObject(payChannel.getChannelSignConfig());
+            params = cfg.toJavaObject(VortaqpayNormalMchParams.class);
+
+            String gateway = StringUtils.defaultIfBlank(cfg.getString("Gateway"), cfg.getString("gateway"));
+            String reqApi = StringUtils.defaultIfBlank(cfg.getString("reqApi"), cfg.getString("req_api"));
+            if (StringUtils.isNotBlank(gateway) && StringUtils.isNotBlank(reqApi)) {
+                String base = gateway;
+                String path = reqApi;
+                if (!base.endsWith("/")) {
+                    base = base + "/";
+                }
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                params.setPayUrl(base + path);
+            }
+        }
+
+        if (params == null) {
+            params = (VortaqpayNormalMchParams) configContextQueryService
+                    .queryNormalMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), getIfCode());
+        }
+
+        if (params == null) {
+            throw new BizException("Vortaqpay商户参数未配置");
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("country", params.getCountry());
@@ -81,30 +122,47 @@ public class VortaqpayPaymentService extends AbstractPaymentService {
         }
 
         ChannelRetMsg channelRetMsg = new ChannelRetMsg();
+        String payUrl = "";
         if (StringUtils.isEmpty(resStr)) {
             channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_FAIL);
             channelRetMsg.setChannelErrCode("");
             channelRetMsg.setChannelErrMsg("请求vortaqpay接口异常");
         } else {
-            JSONObject resObj = JSONObject.parseObject(resStr);
-            String state = resObj.getString("state");
-            if ("fail".equalsIgnoreCase(state)) {
+            String trimmed = resStr.trim();
+            if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+                log.error("vortaqpay non-json response: {}", trimmed);
                 channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_FAIL);
-                channelRetMsg.setChannelErrCode(resObj.getString("errorCode"));
-                channelRetMsg.setChannelErrMsg(resObj.getString("errorMsg"));
+                channelRetMsg.setChannelErrCode("");
+                channelRetMsg.setChannelErrMsg("Vortaqpay返回非JSON响应");
             } else {
-                channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.WAITING);
-                String channelOrderId = resObj.getString("order_id");
-                if (StringUtils.isNotBlank(channelOrderId)) {
-                    channelRetMsg.setChannelOrderId(channelOrderId);
+                JSONObject resObj = JSONObject.parseObject(resStr);
+                String state = resObj.getString("state");
+                if ("fail".equalsIgnoreCase(state)) {
+                    channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_FAIL);
+                    channelRetMsg.setChannelErrCode(resObj.getString("errorCode"));
+                    channelRetMsg.setChannelErrMsg(resObj.getString("errorMsg"));
+                } else {
+                    channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.WAITING);
+                    String channelOrderId = resObj.getString("order_id");
+                    if (StringUtils.isNotBlank(channelOrderId)) {
+                        channelRetMsg.setChannelOrderId(channelOrderId);
+                    }
+                    channelRetMsg.setChannelAttach(resStr);
+
+                    payUrl = StringUtils.defaultIfBlank(resObj.getString("payUrl"), payUrl);
+                    payUrl = StringUtils.defaultIfBlank(resObj.getString("pay_url"), payUrl);
+                    payUrl = StringUtils.defaultIfBlank(resObj.getString("payment_url"), payUrl);
+                    payUrl = StringUtils.defaultIfBlank(resObj.getString("url"), payUrl);
                 }
-                channelRetMsg.setChannelAttach(resStr);
             }
         }
 
-        UnifiedOrderRS res = new UnifiedOrderRS();
+        CommonPayDataRS res = ApiResBuilder.buildSuccess(CommonPayDataRS.class);
         res.setPayOrderId(payOrder.getPayOrderId());
         res.setMchOrderNo(payOrder.getMchOrderNo());
+        if (StringUtils.isNotBlank(payUrl)) {
+            res.setPayUrl(payUrl);
+        }
         res.setChannelRetMsg(channelRetMsg);
         return res;
     }

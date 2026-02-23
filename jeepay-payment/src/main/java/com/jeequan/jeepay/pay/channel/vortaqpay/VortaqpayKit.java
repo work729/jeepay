@@ -80,6 +80,9 @@ public class VortaqpayKit {
         if (StringUtils.isEmpty(payUrl)) {
             return payUrl;
         }
+        if (payUrl.contains("/api/")) {
+            return payUrl;
+        }
         if (!payUrl.endsWith("/")) {
             payUrl += "/";
         }

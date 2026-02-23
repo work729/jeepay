@@ -21,8 +21,10 @@ import com.jeequan.jeepay.components.mq.vender.IMQSender;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.entity.MchApp;
 import com.jeequan.jeepay.core.entity.MchInfo;
-import com.jeequan.jeepay.core.entity.MchPayPassage;
+import com.jeequan.jeepay.core.entity.MchPayProduct;
+import com.jeequan.jeepay.core.entity.PayChannel;
 import com.jeequan.jeepay.core.entity.PayOrder;
+import com.jeequan.jeepay.core.entity.PayProductChannel;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.core.model.DBApplicationConfig;
@@ -42,8 +44,11 @@ import com.jeequan.jeepay.pay.rqrs.payorder.payway.QrCashierOrderRQ;
 import com.jeequan.jeepay.pay.rqrs.payorder.payway.QrCashierOrderRS;
 import com.jeequan.jeepay.pay.service.ConfigContextQueryService;
 import com.jeequan.jeepay.pay.service.PayOrderProcessService;
-import com.jeequan.jeepay.service.impl.MchPayPassageService;
+import com.jeequan.jeepay.service.impl.MchPayProductService;
+import com.jeequan.jeepay.service.impl.PayChannelService;
+import com.jeequan.jeepay.service.impl.PayInterfaceDefineService;
 import com.jeequan.jeepay.service.impl.PayOrderService;
+import com.jeequan.jeepay.service.impl.PayProductChannelService;
 import com.jeequan.jeepay.service.impl.SysConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -52,6 +57,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 * 创建支付订单抽象类
@@ -63,7 +74,9 @@ import java.util.Date;
 @Slf4j
 public abstract class AbstractPayOrderController extends ApiController {
 
-    @Autowired private MchPayPassageService mchPayPassageService;
+    @Autowired private MchPayProductService mchPayProductService;
+    @Autowired private PayProductChannelService payProductChannelService;
+    @Autowired private PayChannelService payChannelService;
     @Autowired private PayOrderService payOrderService;
     @Autowired private ConfigContextQueryService configContextQueryService;
     @Autowired private PayOrderProcessService payOrderProcessService;
@@ -138,50 +151,17 @@ public abstract class AbstractPayOrderController extends ApiController {
                 throw new BizException("商户应用状态不可用");
             }
 
-            //收银台支付并且只有新订单需要走这里，  收银台二次下单的wayCode应该为实际支付方式。
-            if(isNewOrder && CS.PAY_WAY_CODE.QR_CASHIER.equals(wayCode)){
+            RouteConfig routeConfig = findRouteConfig(mchAppConfigContext, wayCode);
 
-                //生成订单
-                payOrder = genPayOrder(bizRQ, mchInfo, mchApp, null, null);
-                String payOrderId = payOrder.getPayOrderId();
-                //订单入库 订单状态： 生成状态  此时没有和任何上游渠道产生交互。
-                payOrderService.save(payOrder);
-
-                QrCashierOrderRS qrCashierOrderRS = new QrCashierOrderRS();
-                QrCashierOrderRQ qrCashierOrderRQ = (QrCashierOrderRQ)bizRQ;
-
-                DBApplicationConfig dbApplicationConfig = sysConfigService.getDBApplicationConfig();
-
-                String payUrl = dbApplicationConfig.genUniJsapiPayUrl(QRCodeParams.TYPE_PAY_ORDER, payOrderId);
-                if(CS.PAY_DATA_TYPE.CODE_IMG_URL.equals(qrCashierOrderRQ.getPayDataType())){ //二维码地址
-                    qrCashierOrderRS.setCodeImgUrl(dbApplicationConfig.genScanImgUrl(payUrl));
-
-                }else{ //默认都为跳转地址方式
-                    qrCashierOrderRS.setPayUrl(payUrl);
-                }
-
-                return packageApiResByPayOrder(bizRQ, qrCashierOrderRS, payOrder);
-            }
-
-            // 根据支付方式， 查询出 该商户 可用的支付接口
-            MchPayPassage mchPayPassage = mchPayPassageService.findMchPayPassage(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), wayCode);
-            if(mchPayPassage == null){
-                throw new BizException("商户应用不支持该支付方式");
-            }
-
-            //获取支付接口
-            IPaymentService paymentService = checkMchWayCodeAndGetService(mchAppConfigContext, mchPayPassage);
+            IPaymentService paymentService = checkMchWayCodeAndGetService(mchAppConfigContext, routeConfig.getIfCode(), wayCode);
             String ifCode = paymentService.getIfCode();
 
-            //生成订单
             if(isNewOrder){
-                payOrder = genPayOrder(bizRQ, mchInfo, mchApp, ifCode, mchPayPassage);
+                payOrder = genPayOrder(bizRQ, mchInfo, mchApp, ifCode, routeConfig.getMchRate());
             }else{
                 payOrder.setIfCode(ifCode);
-
-                // 查询支付方式的费率，并 在更新ing时更新费率信息
-                payOrder.setMchFeeRate(mchPayPassage.getRate());
-                payOrder.setMchFeeAmount(AmountUtil.calPercentageFee(payOrder.getAmount(), payOrder.getMchFeeRate())); //商户手续费,单位分
+                payOrder.setMchFeeRate(routeConfig.getMchRate());
+                payOrder.setMchFeeAmount(AmountUtil.calPercentageFee(payOrder.getAmount(), payOrder.getMchFeeRate()));
             }
 
             //预先校验
@@ -226,11 +206,15 @@ public abstract class AbstractPayOrderController extends ApiController {
 
         } catch (Exception e) {
             log.error("系统异常：{}", e);
-            return ApiRes.customFail("系统异常");
+            String msg = e.getMessage();
+            if(StringUtils.isBlank(msg)){
+                msg = "系统异常";
+            }
+            return ApiRes.customFail(msg);
         }
     }
 
-    private PayOrder genPayOrder(UnifiedOrderRQ rq, MchInfo mchInfo, MchApp mchApp, String ifCode, MchPayPassage mchPayPassage){
+    private PayOrder genPayOrder(UnifiedOrderRQ rq, MchInfo mchInfo, MchApp mchApp, String ifCode, BigDecimal mchFeeRate){
 
         PayOrder payOrder = new PayOrder();
         payOrder.setPayOrderId(SeqKit.genPayOrderId()); //生成订单ID
@@ -244,8 +228,8 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setWayCode(rq.getWayCode()); //支付方式
         payOrder.setAmount(rq.getAmount()); //订单金额
 
-        if(mchPayPassage != null){
-            payOrder.setMchFeeRate(mchPayPassage.getRate()); //商户手续费费率快照
+        if(mchFeeRate != null){
+            payOrder.setMchFeeRate(mchFeeRate); //商户手续费费率快照
         }else{
             payOrder.setMchFeeRate(BigDecimal.ZERO); //预下单模式， 按照0计算入库， 后续进行更新
         }
@@ -284,33 +268,15 @@ public abstract class AbstractPayOrderController extends ApiController {
      * 校验： 商户的支付方式是否可用
      * 返回： 支付接口
      * **/
-    private IPaymentService checkMchWayCodeAndGetService(MchAppConfigContext mchAppConfigContext, MchPayPassage mchPayPassage){
+    private IPaymentService checkMchWayCodeAndGetService(MchAppConfigContext mchAppConfigContext, String ifCode, String wayCode){
 
-        // 接口代码
-        String ifCode = mchPayPassage.getIfCode();
         IPaymentService paymentService = SpringBeansUtil.getBean(ifCode + "PaymentService", IPaymentService.class);
         if(paymentService == null){
             throw new BizException("无此支付通道接口");
         }
 
-        if(!paymentService.isSupport(mchPayPassage.getWayCode())){
+        if(!paymentService.isSupport(wayCode)){
             throw new BizException("接口不支持该支付方式");
-        }
-
-        if(mchAppConfigContext.getMchType() == MchInfo.TYPE_NORMAL){ //普通商户
-
-            if(configContextQueryService.queryNormalMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), ifCode) == null){
-                throw new BizException("商户应用参数未配置");
-            }
-        }else if(mchAppConfigContext.getMchType() == MchInfo.TYPE_ISVSUB){ //特约商户
-
-            if(configContextQueryService.queryIsvsubMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), ifCode) == null){
-                throw new BizException("特约商户参数未配置");
-            }
-
-            if(configContextQueryService.queryIsvParams(mchAppConfigContext.getMchInfo().getIsvNo(), ifCode) == null){
-                throw new BizException("服务商参数未配置");
-            }
         }
 
         return paymentService;
@@ -401,5 +367,111 @@ public abstract class AbstractPayOrderController extends ApiController {
         return ApiRes.okWithSign(bizRS, configContextQueryService.queryMchApp(bizRQ.getMchNo(), bizRQ.getAppId()).getAppSecret());
     }
 
+
+    private RouteConfig findRouteConfig(MchAppConfigContext mchAppConfigContext, String wayCode){
+
+        MchInfo mchInfo = mchAppConfigContext.getMchInfo();
+        if(mchInfo == null || mchInfo.getId() == null){
+            throw new BizException("商户信息不存在");
+        }
+
+        Long mchId = mchInfo.getId();
+
+        List<MchPayProduct> mchPayProducts = mchPayProductService.list(
+                MchPayProduct.gw()
+                        .eq(MchPayProduct::getMchId, mchId)
+                        .eq(MchPayProduct::getState, CS.YES)
+        );
+        if(mchPayProducts == null || mchPayProducts.isEmpty()){
+            throw new BizException("商户未配置支付产品");
+        }
+
+        List<Long> productIds = mchPayProducts.stream()
+                .map(MchPayProduct::getProductId)
+                .collect(Collectors.toList());
+
+        List<PayProductChannel> productChannels = payProductChannelService.list(
+                PayProductChannel.gw()
+                        .in(PayProductChannel::getProductId, productIds)
+        );
+        if(productChannels == null || productChannels.isEmpty()){
+            throw new BizException("商户支付产品未配置通道");
+        }
+
+        Map<Long, BigDecimal> productRateMap = new HashMap<>();
+        for (MchPayProduct item : mchPayProducts) {
+            productRateMap.put(item.getProductId(), item.getMchRate());
+        }
+
+        List<Long> channelIds = productChannels.stream()
+                .map(PayProductChannel::getChannelId)
+                .collect(Collectors.toList());
+
+        List<PayChannel> channelList = payChannelService.list(
+                PayChannel.gw()
+                        .in(PayChannel::getId, channelIds)
+                        .eq(PayChannel::getState, CS.PUB_USABLE)
+        );
+        if(channelList == null || channelList.isEmpty()){
+            throw new BizException("商户支付产品通道不可用");
+        }
+
+        Map<Long, List<Long>> channelProductMap = new HashMap<>();
+        for (PayProductChannel relation : productChannels) {
+            List<Long> list = channelProductMap.get(relation.getChannelId());
+            if(list == null){
+                list = new ArrayList<>();
+                channelProductMap.put(relation.getChannelId(), list);
+            }
+            list.add(relation.getProductId());
+        }
+
+        for (PayChannel channel : channelList) {
+            String ifCode = channel.getIfCode();
+            IPaymentService paymentService;
+            try {
+                paymentService = SpringBeansUtil.getBean(ifCode + "PaymentService", IPaymentService.class);
+            } catch (Exception e) {
+                continue;
+            }
+            if(paymentService == null || !paymentService.isSupport(wayCode)){
+                continue;
+            }
+
+            List<Long> bindProductIds = channelProductMap.get(channel.getId());
+            if(bindProductIds == null || bindProductIds.isEmpty()){
+                continue;
+            }
+            for (Long productId : bindProductIds) {
+                BigDecimal rate = productRateMap.get(productId);
+                if(rate == null){
+                    rate = BigDecimal.ZERO;
+                }
+                return new RouteConfig(ifCode, rate);
+            }
+        }
+
+        throw new BizException("商户应用不支持该支付方式");
+    }
+
+
+    private static class RouteConfig {
+
+        private final String ifCode;
+        private final BigDecimal mchRate;
+
+        RouteConfig(String ifCode, BigDecimal mchRate) {
+            this.ifCode = ifCode;
+            this.mchRate = mchRate;
+        }
+
+        public String getIfCode() {
+            return ifCode;
+        }
+
+        public BigDecimal getMchRate() {
+            return mchRate;
+        }
+    }
 
 }

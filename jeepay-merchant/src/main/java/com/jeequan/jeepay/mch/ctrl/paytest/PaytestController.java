@@ -21,6 +21,8 @@ import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.entity.MchApp;
 import com.jeequan.jeepay.core.entity.MchInfo;
 import com.jeequan.jeepay.core.entity.MchPayPassage;
+import com.jeequan.jeepay.core.entity.PayChannel;
+import com.jeequan.jeepay.core.entity.PayProductChannel;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.core.model.DBApplicationConfig;
@@ -33,6 +35,8 @@ import com.jeequan.jeepay.service.impl.MchAppService;
 import com.jeequan.jeepay.service.impl.MchInfoService;
 import com.jeequan.jeepay.service.impl.MchPayProductService;
 import com.jeequan.jeepay.service.impl.MchPayPassageService;
+import com.jeequan.jeepay.service.impl.PayChannelService;
+import com.jeequan.jeepay.service.impl.PayProductChannelService;
 import com.jeequan.jeepay.service.impl.SysConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,9 +47,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.util.CollectionUtils;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 * 支付测试类
@@ -64,6 +71,8 @@ public class PaytestController extends CommonCtrl {
     @Autowired private SysConfigService sysConfigService;
     @Autowired private MchInfoService mchInfoService;
     @Autowired private MchPayProductService mchPayProductService;
+    @Autowired private PayProductChannelService payProductChannelService;
+    @Autowired private PayChannelService payChannelService;
 
     /** 查询商户对应应用下支持的支付方式 **/
     @Operation(summary = "查询商户对应应用下支持的支付方式")
@@ -186,6 +195,28 @@ public class PaytestController extends CommonCtrl {
 
         if(mchApp == null || mchApp.getState() != CS.PUB_USABLE || !mchApp.getAppId().equals(appId)){
             throw new BizException("商户应用不存在或不可用");
+        }
+
+        if (productId != null) {
+            List<PayProductChannel> relations = payProductChannelService.list(
+                    PayProductChannel.gw().eq(PayProductChannel::getProductId, productId)
+            );
+            if (CollectionUtils.isEmpty(relations)) {
+                throw new BizException("支付产品未配置任何通道");
+            }
+
+            List<Long> channelIds = relations.stream()
+                    .map(PayProductChannel::getChannelId)
+                    .collect(Collectors.toList());
+
+            List<PayChannel> channelList = payChannelService.list(
+                    PayChannel.gw()
+                            .in(PayChannel::getId, channelIds)
+                            .eq(PayChannel::getState, CS.PUB_USABLE)
+            );
+            if (CollectionUtils.isEmpty(channelList)) {
+                throw new BizException("支付产品通道不可用");
+            }
         }
 
         PayOrderCreateRequest request = new PayOrderCreateRequest();
