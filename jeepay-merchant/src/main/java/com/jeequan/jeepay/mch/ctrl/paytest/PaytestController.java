@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.jeequan.jeepay.JeepayClient;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.entity.MchApp;
+import com.jeequan.jeepay.core.entity.MchInfo;
 import com.jeequan.jeepay.core.entity.MchPayPassage;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
@@ -29,6 +30,8 @@ import com.jeequan.jeepay.model.PayOrderCreateReqModel;
 import com.jeequan.jeepay.request.PayOrderCreateRequest;
 import com.jeequan.jeepay.response.PayOrderCreateResponse;
 import com.jeequan.jeepay.service.impl.MchAppService;
+import com.jeequan.jeepay.service.impl.MchInfoService;
+import com.jeequan.jeepay.service.impl.MchPayProductService;
 import com.jeequan.jeepay.service.impl.MchPayPassageService;
 import com.jeequan.jeepay.service.impl.SysConfigService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -59,6 +62,8 @@ public class PaytestController extends CommonCtrl {
     @Autowired private MchAppService mchAppService;
     @Autowired private MchPayPassageService mchPayPassageService;
     @Autowired private SysConfigService sysConfigService;
+    @Autowired private MchInfoService mchInfoService;
+    @Autowired private MchPayProductService mchPayProductService;
 
     /** 查询商户对应应用下支持的支付方式 **/
     @Operation(summary = "查询商户对应应用下支持的支付方式")
@@ -81,13 +86,36 @@ public class PaytestController extends CommonCtrl {
         return ApiRes.ok(payWaySet);
     }
 
+    /** 查询商户默认应用下支持的支付方式（按支付通道测试） **/
+    @Operation(summary = "查询商户默认应用下支持的支付方式")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER)
+    })
+    @PreAuthorize("hasAuthority('ENT_MCH_PAY_TEST_PAYWAY_LIST')")
+    @GetMapping("/payways")
+    public ApiRes<Set<String>> defaultPayWayList() {
+
+        MchApp mchApp = mchAppService.getOne(
+                MchApp.gw()
+                        .eq(MchApp::getMchNo, getCurrentMchNo())
+                        .eq(MchApp::getState, CS.PUB_USABLE)
+                        .last("limit 1")
+        );
+
+        if (mchApp == null) {
+            return ApiRes.ok(new HashSet<>());
+        }
+
+        return payWayList(mchApp.getAppId());
+    }
+
 
     /** 调起下单接口 **/
     @Operation(summary = "调起下单接口")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "mchOrderNo", description = "商户订单号", required = true),
-            @Parameter(name = "appId", description = "应用ID", required = true),
+            @Parameter(name = "appId", description = "应用ID"),
             @Parameter(name = "wayCode", description = "支付方式代码", required = true),
             @Parameter(name = "amount", description = "转账金额,单位元", required = true),
             @Parameter(name = "returnUrl", description = "页面跳转地址", required = true),
@@ -106,7 +134,8 @@ public class PaytestController extends CommonCtrl {
     public ApiRes doPay() {
 
         //获取请求参数
-        String appId = getValStringRequired("appId");
+        String appId = getValString("appId");
+        Long productId = getValLong("productId");
         Long amount = getRequiredAmountL("amount");
         String mchOrderNo = getValStringRequired("mchOrderNo");
         String wayCode = getValStringRequired("wayCode");
@@ -123,7 +152,38 @@ public class PaytestController extends CommonCtrl {
         String authCode = getValString("authCode");
 
 
-        MchApp mchApp = mchAppService.getById(appId);
+        if (productId != null) {
+            String mchNo = getCurrentMchNo();
+            MchInfo mchInfo = mchInfoService.getById(mchNo);
+            if (mchInfo == null || mchInfo.getId() == null) {
+                throw new BizException("商户信息不存在");
+            }
+            Long mchId = mchInfo.getId();
+            boolean exists = mchPayProductService.count(
+                    com.jeequan.jeepay.core.entity.MchPayProduct.gw()
+                            .eq(com.jeequan.jeepay.core.entity.MchPayProduct::getMchId, mchId)
+                            .eq(com.jeequan.jeepay.core.entity.MchPayProduct::getProductId, productId)
+            ) > 0;
+            if (!exists) {
+                throw new BizException("支付产品不存在或不可用");
+            }
+        }
+
+        MchApp mchApp;
+        if (StringUtils.isNotEmpty(appId)) {
+            mchApp = mchAppService.getById(appId);
+        } else {
+            mchApp = mchAppService.getOne(
+                    MchApp.gw()
+                            .eq(MchApp::getMchNo, getCurrentMchNo())
+                            .eq(MchApp::getState, CS.PUB_USABLE)
+                            .last("limit 1")
+            );
+            if (mchApp != null) {
+                appId = mchApp.getAppId();
+            }
+        }
+
         if(mchApp == null || mchApp.getState() != CS.PUB_USABLE || !mchApp.getAppId().equals(appId)){
             throw new BizException("商户应用不存在或不可用");
         }
