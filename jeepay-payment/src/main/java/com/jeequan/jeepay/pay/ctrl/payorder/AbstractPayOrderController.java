@@ -16,6 +16,7 @@
 package com.jeequan.jeepay.pay.ctrl.payorder;
 
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.jeequan.jeepay.components.mq.model.PayOrderReissueMQ;
 import com.jeequan.jeepay.components.mq.vender.IMQSender;
 import com.jeequan.jeepay.core.constants.CS;
@@ -24,12 +25,14 @@ import com.jeequan.jeepay.core.entity.MchInfo;
 import com.jeequan.jeepay.core.entity.MchPayProduct;
 import com.jeequan.jeepay.core.entity.PayChannel;
 import com.jeequan.jeepay.core.entity.PayOrder;
+import com.jeequan.jeepay.core.entity.PayProduct;
 import com.jeequan.jeepay.core.entity.PayProductChannel;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.core.model.DBApplicationConfig;
 import com.jeequan.jeepay.core.model.QRCodeParams;
 import com.jeequan.jeepay.core.utils.AmountUtil;
+import com.jeequan.jeepay.core.utils.JsonKit;
 import com.jeequan.jeepay.core.utils.SeqKit;
 import com.jeequan.jeepay.core.utils.SpringBeansUtil;
 import com.jeequan.jeepay.core.utils.StringKit;
@@ -45,6 +48,7 @@ import com.jeequan.jeepay.pay.rqrs.payorder.payway.QrCashierOrderRS;
 import com.jeequan.jeepay.pay.service.ConfigContextQueryService;
 import com.jeequan.jeepay.pay.service.PayOrderProcessService;
 import com.jeequan.jeepay.service.impl.MchPayProductService;
+import com.jeequan.jeepay.service.impl.PayProductService;
 import com.jeequan.jeepay.service.impl.PayChannelService;
 import com.jeequan.jeepay.service.impl.PayInterfaceDefineService;
 import com.jeequan.jeepay.service.impl.PayOrderService;
@@ -81,6 +85,7 @@ public abstract class AbstractPayOrderController extends ApiController {
     @Autowired private ConfigContextQueryService configContextQueryService;
     @Autowired private PayOrderProcessService payOrderProcessService;
     @Autowired private SysConfigService sysConfigService;
+    @Autowired private PayProductService payProductService;
     @Autowired private IMQSender mqSender;
 
 
@@ -156,12 +161,45 @@ public abstract class AbstractPayOrderController extends ApiController {
             IPaymentService paymentService = checkMchWayCodeAndGetService(mchAppConfigContext, routeConfig.getIfCode(), wayCode);
             String ifCode = paymentService.getIfCode();
 
+            // 合并扩展参数：写入产品ID/名称与通道费率及商户费率（百分比）
+            Long routeProductId = routeConfig.getProductId();
+            BigDecimal routeChannelRate = routeConfig.getChannelRate();
+            BigDecimal routeMchRate = routeConfig.getMchRate();
+            String originExt = bizRQ.getExtParam();
+            JSONObject extObj = StringUtils.isNotBlank(originExt) ? JSONObject.parseObject(originExt) : JsonKit.newJson("_", "_");
+            extObj.put("productId", routeProductId);
+            PayProduct pp = routeProductId != null ? payProductService.getById(routeProductId) : null;
+            extObj.put("productName", pp != null ? pp.getProductName() : null);
+            extObj.put("channelFeeRate", routeChannelRate);
+            extObj.put("mchFeeRate", routeMchRate);
+            bizRQ.setExtParam(extObj.toJSONString());
+
             if(isNewOrder){
                 payOrder = genPayOrder(bizRQ, mchInfo, mchApp, ifCode, routeConfig.getMchRate());
+                // 设置产品信息与通道费率
+                payOrder.setProductId(routeProductId);
+                PayProduct ppNew = routeProductId != null ? payProductService.getById(routeProductId) : null;
+                payOrder.setProductName(ppNew != null ? ppNew.getProductName() : null);
+                payOrder.setChannelFeeRate(routeChannelRate);
             }else{
                 payOrder.setIfCode(ifCode);
                 payOrder.setMchFeeRate(routeConfig.getMchRate());
                 payOrder.setMchFeeAmount(AmountUtil.calPercentageFee(payOrder.getAmount(), payOrder.getMchFeeRate()));
+                // 更新产品信息与通道费率
+                payOrder.setProductId(routeProductId);
+                PayProduct ppUpd = routeProductId != null ? payProductService.getById(routeProductId) : null;
+                payOrder.setProductName(ppUpd != null ? ppUpd.getProductName() : null);
+                payOrder.setChannelFeeRate(routeChannelRate);
+                // 同步更新订单扩展参数，确保渠道请求收到最新扩展字段
+                String payOrderExt = payOrder.getExtParam();
+                JSONObject extUpd = StringUtils.isNotBlank(payOrderExt) ? JSONObject.parseObject(payOrderExt) : JsonKit.newJson("_", "_");
+                extUpd.put("productId", routeProductId);
+                PayProduct ppu = routeProductId != null ? payProductService.getById(routeProductId) : null;
+                extUpd.put("productName", ppu != null ? ppu.getProductName() : null);
+                extUpd.put("channelFeeRate", routeChannelRate);
+                extUpd.put("mchFeeRate", routeMchRate);
+                payOrder.setExtParam(extUpd.toJSONString());
+                bizRQ.setExtParam(payOrder.getExtParam());
             }
 
             //预先校验
@@ -447,7 +485,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 if(rate == null){
                     rate = BigDecimal.ZERO;
                 }
-                return new RouteConfig(ifCode, rate);
+                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate());
             }
         }
 
@@ -459,10 +497,14 @@ public abstract class AbstractPayOrderController extends ApiController {
 
         private final String ifCode;
         private final BigDecimal mchRate;
+        private final Long productId;
+        private final BigDecimal channelRate;
 
-        RouteConfig(String ifCode, BigDecimal mchRate) {
+        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate) {
             this.ifCode = ifCode;
             this.mchRate = mchRate;
+            this.productId = productId;
+            this.channelRate = channelRate;
         }
 
         public String getIfCode() {
@@ -471,6 +513,14 @@ public abstract class AbstractPayOrderController extends ApiController {
 
         public BigDecimal getMchRate() {
             return mchRate;
+        }
+
+        public Long getProductId() {
+            return productId;
+        }
+
+        public BigDecimal getChannelRate() {
+            return channelRate;
         }
     }
 

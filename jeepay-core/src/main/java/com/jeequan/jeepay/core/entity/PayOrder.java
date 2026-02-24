@@ -135,6 +135,24 @@ public class PayOrder extends BaseModel implements Serializable {
     private Long amount;
 
     /**
+     * 产品ID
+     */
+    @Schema(title = "productId", description = "产品ID")
+    private Long productId;
+
+    /**
+     * 产品名称
+     */
+    @Schema(title = "productName", description = "产品名称")
+    private String productName;
+
+    /**
+     * 通道费率（百分比）
+     */
+    @Schema(title = "channelFeeRate", description = "通道费率（百分比）")
+    private BigDecimal channelFeeRate;
+
+    /**
      * 商户手续费费率快照
      */
     @Schema(title = "mchFeeRate", description = "商户手续费费率快照")

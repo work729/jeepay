@@ -14,6 +14,9 @@
         <result column="if_code" property="ifCode" />
         <result column="way_code" property="wayCode" />
         <result column="amount" property="amount" />
+        <result column="product_id" property="productId" />
+        <result column="product_name" property="productName" />
+        <result column="channel_fee_rate" property="channelFeeRate" />
         <result column="mch_fee_rate" property="mchFeeRate" />
         <result column="mch_fee_amount" property="mchFeeAmount" />
         <result column="currency" property="currency" />
