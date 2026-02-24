@@ -31,9 +31,6 @@
         <result column="refund_state" property="refundState" />
         <result column="refund_times" property="refundTimes" />
         <result column="refund_amount" property="refundAmount" />
-        <result column="division_mode" property="divisionMode" />
-        <result column="division_state" property="divisionState" />
-        <result column="division_last_time" property="divisionLastTime" />
         <result column="err_code" property="errCode" />
         <result column="err_msg" property="errMsg" />
         <result column="ext_param" property="extParam" />

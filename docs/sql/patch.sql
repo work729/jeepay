@@ -29,7 +29,7 @@ INSERT INTO `t_sys_config` VALUES ('ROBOT_MCH_RATE_CHANGE_NOTICE', '商户费率
 
 ## -- ++++ [v1.4.0] ++++
 -- 支付接口定义表 新增支付参数配置页面是否为自定义
-ALTER TABLE `t_pay_interface_define` ADD COLUMN `config_page_type` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '支付参数配置页面类型:1-JSON渲染,2-自定义' after `is_isv_mode`;
+ALTER TABLE `t_pay_interface_define` ADD COLUMN `config_page_type` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '支付参数配置页面类型:1-JSON渲染,2-自定义' after `if_name`;
 
 -- 优化支付接口定义初始化，新增是否为脱敏数据
 
@@ -246,8 +246,8 @@ insert into t_sys_entitlement values('ENT_DIVISION_RECORD_RESEND', '按钮：重
 
 ## -- ++++ [v1.12.0] ===> [v1.13.0] ++++
 DELETE FROM t_pay_interface_define WHERE if_code = 'wxpay';
-INSERT INTO t_pay_interface_define (if_code, if_name, is_isv_mode, config_page_type, normal_mch_params, way_codes, icon, bg_color, state, remark)
-VALUES ('wxpay', '微信支付官方', 1, 2,
+INSERT INTO t_pay_interface_define (if_code, if_name, config_page_type, normal_mch_params, way_codes, icon, bg_color, state, remark)
+VALUES ('wxpay', '微信支付官方', 2,
         '[{"name":"mchId", "desc":"微信支付商户号", "type": "text","verify":"required"},{"name":"appId","desc":"应用App ID","type":"text","verify":"required"},{"name":"appSecret","desc":"应用AppSecret","type":"text","verify":"required","star":"1"},{"name":"oauth2Url", "desc":"oauth2地址（置空将使用官方）", "type": "text"},{"name":"apiVersion", "desc":"微信支付API版本", "type": "radio","values":"V2,V3","titles":"V2,V3","verify":"required"},{"name":"key", "desc":"APIv2密钥", "type": "textarea","verify":"required","star":"1"},{"name":"apiV3Key", "desc":"APIv3密钥（V3接口必填）", "type": "textarea","verify":"","star":"1"},{"name":"serialNo", "desc":"序列号（V3接口必填）", "type": "textarea","verify":"","star":"1" },{"name":"cert", "desc":"API证书(apiclient_cert.p12)", "type": "file","verify":""},{"name":"apiClientCert", "desc":"证书文件(apiclient_cert.pem) ", "type": "file","verify":""},{"name":"apiClientKey", "desc":"私钥文件(apiclient_key.pem)", "type": "file","verify":""}]',
         '[{"wayCode": "WX_APP"}, {"wayCode": "WX_H5"}, {"wayCode": "WX_NATIVE"}, {"wayCode": "WX_JSAPI"}, {"wayCode": "WX_BAR"}, {"wayCode": "WX_LITE"}]',
         'http://jeequan.oss-cn-beijing.aliyuncs.com/jeepay/img/wxpay.png', '#04BE02', 1, '微信官方通道');
@@ -287,3 +287,12 @@ alter table t_transfer_order add column `channel_res_data` TEXT DEFAULT NULL COM
 
 
 ## -- ++++ [v3.1.0] ===> NEXT
+--
+-- 移除分账相关表与列
+--
+alter table `t_pay_order` drop column `division_mode`;
+alter table `t_pay_order` drop column `division_state`;
+alter table `t_pay_order` drop column `division_last_time`;
+drop table if exists `t_mch_division_receiver_group`;
+drop table if exists `t_mch_division_receiver`;
+drop table if exists `t_pay_order_division_record`;

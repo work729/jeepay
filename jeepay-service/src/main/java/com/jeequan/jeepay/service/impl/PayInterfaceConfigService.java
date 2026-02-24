@@ -72,7 +72,6 @@ public class PayInterfaceConfigService extends ServiceImpl<PayInterfaceConfigMap
         // 支付定义列表
         LambdaQueryWrapper<PayInterfaceDefine> queryWrapper = PayInterfaceDefine.gw();
         queryWrapper.eq(PayInterfaceDefine::getState, CS.YES);
-        queryWrapper.eq(PayInterfaceDefine::getIsIsvMode, CS.YES); // 支持服务商模式
 
         List<PayInterfaceDefine> defineList = payInterfaceDefineService.list(queryWrapper);
 
@@ -111,7 +110,6 @@ public class PayInterfaceConfigService extends ServiceImpl<PayInterfaceConfigMap
 
         // 根据商户类型，添加接口是否支持该商户类型条件
         if (mchInfo.getType() == CS.MCH_TYPE_ISVSUB) {
-            queryWrapper.eq(PayInterfaceDefine::getIsIsvMode, CS.YES); // 支持服务商模式
             // 商户类型为特约商户，服务商应已经配置支付参数
             List<PayInterfaceConfig> isvConfigList = this.list(PayInterfaceConfig.gw()
                     .eq(PayInterfaceConfig::getInfoId, mchInfo.getIsvNo())

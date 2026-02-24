@@ -54,7 +54,6 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
     @Autowired private MchInfoMapper mchInfoMapper;
     @Autowired private IsvInfoMapper isvInfoMapper;
     @Autowired private PayWayMapper payWayMapper;
-    @Autowired private PayOrderDivisionRecordMapper payOrderDivisionRecordMapper;
     @Autowired private MchFundFlowService mchFundFlowService;
 
     /** 更新订单状态  【订单生成】 --》 【支付中】 **/
@@ -406,9 +405,6 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         //商家订单入账金额 （支付金额 - 手续费 - 退款金额 - 总分账金额）
         Long mchIncomeAmount = dbPayOrder.getAmount() - dbPayOrder.getMchFeeAmount() - dbPayOrder.getRefundAmount();
 
-        //减去已分账金额
-        mchIncomeAmount -= payOrderDivisionRecordMapper.sumSuccessDivisionAmount(dbPayOrder.getPayOrderId());
-
         return mchIncomeAmount <= 0 ? 0 : mchIncomeAmount;
 
     }
@@ -449,9 +445,7 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         if (StringUtils.isNotEmpty(payOrder.getAppId())) {
             wrapper.eq(PayOrder::getAppId, payOrder.getAppId());
         }
-        if (payOrder.getDivisionState() != null) {
-            wrapper.eq(PayOrder::getDivisionState, payOrder.getDivisionState());
-        }
+ 
         if (paramJSON != null) {
             if (StringUtils.isNotEmpty(paramJSON.getString("createdStart"))) {
                 wrapper.ge(PayOrder::getCreatedAt, paramJSON.getString("createdStart"));

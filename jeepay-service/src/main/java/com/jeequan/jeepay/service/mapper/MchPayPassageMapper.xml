@@ -26,9 +26,6 @@
         and pic.info_type = #{infoType}
         and pic.info_id = #{appId}
         and (pic.if_params is not null and trim(pic.if_params) != '')
-        <if test="mchType == 2">
-            and pid.is_isv_mode = 1
-        </if>;
     </select>
 
 

@@ -43,14 +43,7 @@ public abstract class AbstractPaymentService implements IPaymentService{
         return null; //使用系统默认支付订单号
     }
 
-    /** 订单分账（一般用作 如微信订单将在下单处做标记） */
-    protected boolean isDivisionOrder(PayOrder payOrder){
-        //订单分账， 将冻结商户资金。
-        if(payOrder.getDivisionMode() != null && (PayOrder.DIVISION_MODE_AUTO == payOrder.getDivisionMode() || PayOrder.DIVISION_MODE_MANUAL == payOrder.getDivisionMode() )){
-            return true;
-        }
-        return false;
-    }
+ 
 
     protected String getNotifyUrl(){
         return sysConfigService.getDBApplicationConfig().getPaySiteUrl() + "/api/pay/notify/" + getIfCode();

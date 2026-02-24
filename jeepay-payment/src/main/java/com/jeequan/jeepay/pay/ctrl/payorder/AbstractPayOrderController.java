@@ -125,7 +125,6 @@ public abstract class AbstractPayOrderController extends ApiController {
                 bizRQ.setReturnUrl(payOrder.getReturnUrl());
                 bizRQ.setChannelExtra(payOrder.getChannelExtra());
                 bizRQ.setExtParam(payOrder.getExtParam());
-                bizRQ.setDivisionMode(payOrder.getDivisionMode());
             }
 
             String mchNo = bizRQ.getMchNo();
@@ -285,8 +284,7 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setNotifyUrl(rq.getNotifyUrl()); //异步通知地址
         payOrder.setReturnUrl(rq.getReturnUrl()); //页面跳转地址
 
-        // 分账模式
-        payOrder.setDivisionMode(ObjectUtils.defaultIfNull(rq.getDivisionMode(), PayOrder.DIVISION_MODE_FORBID));
+ 
 
         Date nowDate = new Date();
 

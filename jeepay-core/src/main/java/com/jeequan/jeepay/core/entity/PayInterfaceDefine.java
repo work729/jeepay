@@ -65,12 +65,6 @@ public class PayInterfaceDefine extends BaseModel implements Serializable {
     private String ifName;
 
     /**
-     * 是否支持服务商子商户模式: 0-不支持, 1-支持
-     */
-    @Schema(title = "isIsvMode", description = "是否支持服务商子商户模式: 0-不支持, 1-支持")
-    private Byte isIsvMode;
-
-    /**
      * 支付参数配置页面类型:1-JSON渲染,2-自定义
      */
     @Schema(title = "configPageType", description = "支付参数配置页面类型:1-JSON渲染,2-自定义")

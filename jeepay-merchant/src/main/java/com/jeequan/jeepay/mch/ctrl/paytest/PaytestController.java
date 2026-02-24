@@ -128,7 +128,6 @@ public class PaytestController extends CommonCtrl {
             @Parameter(name = "wayCode", description = "支付方式代码", required = true),
             @Parameter(name = "amount", description = "转账金额,单位元", required = true),
             @Parameter(name = "returnUrl", description = "页面跳转地址", required = true),
-            @Parameter(name = "divisionMode", description = "订单分账模式：0-该笔订单不允许分账, 1-支付成功按配置自动完成分账, 2-商户手动分账(解冻商户金额)", required = true),
             @Parameter(name = "orderTitle", description = "订单标题", required = true),
             @Parameter(name = "expiredTime", description = "过期时间"),
             @Parameter(name = "clientIp", description = "客户端IP"),
@@ -149,7 +148,6 @@ public class PaytestController extends CommonCtrl {
         String mchOrderNo = getValStringRequired("mchOrderNo");
         String wayCode = getValStringRequired("wayCode");
 
-        Byte divisionMode = getValByteRequired("divisionMode");
         String orderTitle = getValStringRequired("orderTitle");
 
         if(StringUtils.isEmpty(orderTitle)){
@@ -241,7 +239,6 @@ public class PaytestController extends CommonCtrl {
         DBApplicationConfig dbApplicationConfig = sysConfigService.getDBApplicationConfig();
 
         model.setNotifyUrl(dbApplicationConfig.getMchSiteUrl() + "/api/anon/paytestNotify/payOrder"); //回调地址
-        model.setDivisionMode(divisionMode); //分账模式
 
         //设置扩展参数
         JSONObject extParams = new JSONObject();
