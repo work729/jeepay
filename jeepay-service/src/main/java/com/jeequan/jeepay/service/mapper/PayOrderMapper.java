@@ -46,4 +46,10 @@ public interface PayOrderMapper extends BaseMapper<PayOrder> {
 
     /** 商户通道成功率统计 **/
     List<Map> selectChannelSuccessStats(@Param("param") Map param);
+
+    /** 产品维度汇总分页 **/
+    com.baomidou.mybatisplus.core.metadata.IPage<Map> selectProductStatsPage(com.baomidou.mybatisplus.core.metadata.IPage<?> page, @Param("param") Map param);
+
+    /** 产品下商户统计 **/
+    List<Map> selectProductMchStats(@Param("param") Map param);
 }

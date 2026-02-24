@@ -131,4 +131,41 @@
         ORDER BY totalCount DESC
     </select>
 
+    <!-- 产品维度汇总分页 -->
+    <select id="selectProductStatsPage" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.product_id AS productId,
+            MAX(t.product_name) AS productName,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
+            SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS rechargeCount,
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN t.state = 3 THEN 1 ELSE 0 END) AS blueCount
+        FROM t_pay_order t
+        WHERE 1=1
+        <if test="param.productId != null and param.productId != ''"> AND t.product_id = #{param.productId} </if>
+        <if test="param.productName != null and param.productName != ''"> AND t.product_name LIKE CONCAT('%', #{param.productName}, '%') </if>
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.product_id
+        ORDER BY rechargeAmount DESC
+    </select>
+
+    <!-- 产品下商户统计 -->
+    <select id="selectProductMchStats" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.mch_no AS mchNo,
+            MAX(t.mch_name) AS mchName,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
+            ROUND(IFNULL(SUM(t.amount - IFNULL(t.mch_fee_amount,0) - IFNULL(t.refund_amount,0)),0)/100, 2) AS creditedAmount,
+            COUNT(1) AS rechargeCount,
+            SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS successCount
+        FROM t_pay_order t
+        WHERE 1=1
+        <if test="param.productId != null and param.productId != ''"> AND t.product_id = #{param.productId} </if>
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.mch_no
+        ORDER BY rechargeAmount DESC
+    </select>
+
 </mapper>
