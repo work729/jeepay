@@ -84,9 +84,8 @@ public class MchPayInterfaceConfigController extends CommonCtrl {
         List<PayInterfaceDefine> list = payInterfaceConfigService.selectAllPayIfConfigListByAppId(getValStringRequired("appId"));
 
         for (PayInterfaceDefine define : list) {
-            define.addExt("mchParams", mchInfo.getType() == CS.MCH_TYPE_NORMAL ? define.getNormalMchParams() : define.getIsvsubMchParams());
+            define.addExt("mchParams", define.getNormalMchParams());
             define.setNormalMchParams(null);
-            define.setIsvsubMchParams(null);
         }
         return ApiRes.ok(list);
     }

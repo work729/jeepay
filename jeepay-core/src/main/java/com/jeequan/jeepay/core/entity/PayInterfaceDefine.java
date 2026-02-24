@@ -65,12 +65,6 @@ public class PayInterfaceDefine extends BaseModel implements Serializable {
     private String ifName;
 
     /**
-     * 是否支持普通商户模式: 0-不支持, 1-支持
-     */
-    @Schema(title = "isMchMode", description = "是否支持普通商户模式: 0-不支持, 1-支持")
-    private Byte isMchMode;
-
-    /**
      * 是否支持服务商子商户模式: 0-不支持, 1-支持
      */
     @Schema(title = "isIsvMode", description = "是否支持服务商子商户模式: 0-不支持, 1-支持")
@@ -82,17 +76,6 @@ public class PayInterfaceDefine extends BaseModel implements Serializable {
     @Schema(title = "configPageType", description = "支付参数配置页面类型:1-JSON渲染,2-自定义")
     private Byte configPageType;
 
-    /**
-     * ISV接口配置定义描述,json字符串
-     */
-    @Schema(title = "isvParams", description = "ISV接口配置定义描述,json字符串")
-    private String isvParams;
-
-    /**
-     * 特约商户接口配置定义描述,json字符串
-     */
-    @Schema(title = "isvsubMchParams", description = "特约商户接口配置定义描述,json字符串")
-    private String isvsubMchParams;
 
     /**
      * 普通商户接口配置定义描述,json字符串

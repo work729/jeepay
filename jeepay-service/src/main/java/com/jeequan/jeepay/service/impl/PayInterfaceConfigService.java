@@ -110,9 +110,6 @@ public class PayInterfaceConfigService extends ServiceImpl<PayInterfaceConfigMap
         Map<String, PayInterfaceConfig> isvPayConfigMap = new HashMap<>(); // 服务商支付参数配置集合
 
         // 根据商户类型，添加接口是否支持该商户类型条件
-        if (mchInfo.getType() == CS.MCH_TYPE_NORMAL) {
-            queryWrapper.eq(PayInterfaceDefine::getIsMchMode, CS.YES); // 支持普通商户模式
-        }
         if (mchInfo.getType() == CS.MCH_TYPE_ISVSUB) {
             queryWrapper.eq(PayInterfaceDefine::getIsIsvMode, CS.YES); // 支持服务商模式
             // 商户类型为特约商户，服务商应已经配置支付参数
