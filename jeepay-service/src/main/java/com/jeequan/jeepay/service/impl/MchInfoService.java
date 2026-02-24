@@ -15,8 +15,6 @@
  */
 package com.jeequan.jeepay.service.impl;
 
-import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
@@ -56,7 +54,7 @@ public class MchInfoService extends ServiceImpl<MchInfoMapper, MchInfo> {
 
     @Autowired private IsvInfoService isvInfoService;
 
-    @Autowired private MchAppService mchAppService;
+    // 已废弃：商户应用相关操作移除
 
     @Transactional(rollbackFor = Exception.class)
     public void addMch(MchInfo mchInfo, String loginUserName) {
@@ -88,19 +86,7 @@ public class MchInfoService extends ServiceImpl<MchInfoMapper, MchInfo> {
         sysUser.setState(CS.YES);
         sysUserService.addSysUser(sysUser, CS.SYS_TYPE.MCH);
 
-        // 插入商户默认应用
-        MchApp mchApp = new MchApp();
-        mchApp.setAppId(IdUtil.objectId());
-        mchApp.setMchNo(mchInfo.getMchNo());
-        mchApp.setAppName("默认应用");
-        mchApp.setAppSecret(RandomUtil.randomString(128));
-        mchApp.setState(CS.YES);
-        mchApp.setCreatedBy(sysUser.getRealname());
-        mchApp.setCreatedUid(sysUser.getSysUserId());
-        saveResult = mchAppService.save(mchApp);
-        if (!saveResult) {
-            throw new BizException(ApiCodeEnum.SYS_OPERATION_FAIL_CREATE);
-        }
+        // 商户应用表已废弃，不再创建默认应用
 
         // 存入商户默认用户ID
         MchInfo updateRecord = new MchInfo();
@@ -132,25 +118,14 @@ public class MchInfoService extends ServiceImpl<MchInfoMapper, MchInfo> {
             // 2.删除当前商户配置的支付通道
             mchPayPassageService.remove(MchPayPassage.gw().eq(MchPayPassage::getMchNo, mchNo));
 
-            // 3.删除当前商户支付接口配置参数
-            List<String> appIdList = new LinkedList<>();
-            mchAppService.list(MchApp.gw().eq(MchApp::getMchNo, mchNo)).forEach(item -> appIdList.add(item.getAppId()));
-            if (CollectionUtils.isNotEmpty(appIdList)) {
-                payInterfaceConfigService.remove(PayInterfaceConfig.gw()
-                        .in(PayInterfaceConfig::getInfoId, appIdList)
-                        .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH_APP)
-                );
-            }
+            // 3.商户应用表已废弃，跳过关联支付接口参数清理
 
             List<SysUser> userList = sysUserService.list(SysUser.gw()
                     .eq(SysUser::getBelongInfoId, mchNo)
                     .eq(SysUser::getSysType, CS.SYS_TYPE.MCH)
             );
 
-            // 4.删除当前商户应用信息
-            if (CollectionUtils.isNotEmpty(appIdList)) {
-                mchAppService.removeByIds(appIdList);
-            }
+            // 4.商户应用表已废弃，跳过应用信息删除
 
             // 返回的用户id
             List<Long> userIdList = new ArrayList<>();

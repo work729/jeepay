@@ -1,5 +1,6 @@
 package com.jeequan.jeepay.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -16,6 +17,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>
@@ -33,37 +38,10 @@ public class MchAppService extends ServiceImpl<MchAppMapper, MchApp> {
     @Autowired private PayInterfaceConfigService payInterfaceConfigService;
 
     @Transactional(rollbackFor = Exception.class)
-    public void removeByAppId(String appId) {
-
-        // 1.查看当前应用是否存在交易数据
-        long payCount = payOrderService.count(PayOrder.gw().eq(PayOrder::getAppId, appId));
-        if (payCount > 0) {
-            throw new BizException("该应用已存在交易数据，不可删除");
-        }
-
-        // 2.删除应用关联的支付通道
-        mchPayPassageService.remove(MchPayPassage.gw().eq(MchPayPassage::getAppId, appId));
-
-        // 3.删除应用配置的支付参数
-        payInterfaceConfigService.remove(PayInterfaceConfig.gw()
-                .eq(PayInterfaceConfig::getInfoId, appId)
-                .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH_APP)
-        );
-
-        // 4.删除当前应用
-        if (!removeById(appId)) {
-            throw new BizException(ApiCodeEnum.SYS_OPERATION_FAIL_DELETE);
-        }
-    }
+    public void removeByAppId(String appId) { }
 
     public MchApp selectById(String appId) {
-        MchApp mchApp = this.getById(appId);
-        if (mchApp == null) {
-            return null;
-        }
-        mchApp.setAppSecret(StringKit.str2Star(mchApp.getAppSecret(), 6, 6, 6));
-
-        return mchApp;
+        return null;
     }
 
     public IPage<MchApp> selectPage(IPage iPage, MchApp mchApp) {
@@ -83,15 +61,23 @@ public class MchAppService extends ServiceImpl<MchAppMapper, MchApp> {
         }
         wrapper.orderByDesc(MchApp::getCreatedAt);
 
-        IPage<MchApp> pages = this.page(iPage, wrapper);
-
-        pages.getRecords().stream().forEach(item -> item.setAppSecret(StringKit.str2Star(item.getAppSecret(), 6, 6, 6)));
-
-        return pages;
+        return iPage;
     }
 
     public MchApp getOneByMch(String mchNo, String appId){
-        return getOne(MchApp.gw().eq(MchApp::getMchNo, mchNo).eq(MchApp::getAppId, appId));
+        return null;
     }
+
+    @Override
+    public boolean save(MchApp entity) { return false; }
+
+    @Override
+    public boolean updateById(MchApp entity) { return false; }
+
+    @Override
+    public boolean removeByIds(Collection<?> list) { return false; }
+
+    @Override
+    public boolean remove(Wrapper<MchApp> queryWrapper) { return false; }
 
 }

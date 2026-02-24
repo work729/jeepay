@@ -206,22 +206,6 @@ CREATE TABLE `t_agent_info` (
         PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='代理商信息表';
 
--- 商户应用表
-DROP TABLE IF EXISTS t_mch_app;
-CREATE TABLE `t_mch_app` (
-         `app_id` varchar(64) NOT NULL COMMENT '应用ID',
-         `app_name` varchar(64) NOT NULL DEFAULT '' COMMENT '应用名称',
-         `mch_no` VARCHAR(64) NOT NULL COMMENT '商户号',
-         `state` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '应用状态: 0-停用, 1-正常',
-         `app_secret` VARCHAR(128) NOT NULL COMMENT '应用私钥',
-         `remark` varchar(128) DEFAULT NULL COMMENT '备注',
-         `created_uid` BIGINT(20) COMMENT '创建者用户ID',
-         `created_by` VARCHAR(64) COMMENT '创建者姓名',
-         `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
-         `updated_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
-         PRIMARY KEY (`app_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户应用表';
-
 -- 服务商信息表
 DROP TABLE IF EXISTS t_isv_info;
 CREATE TABLE `t_isv_info` (
@@ -647,7 +631,7 @@ insert into t_sys_entitlement values('ENT_ORDER', '订单管理', 'transaction',
     insert into t_sys_entitlement values('ENT_TRANSFER_ORDER', '转账订单', 'property-safety', '/transfer', 'TransferOrderListPage', 'ML', 0, 1,  'ENT_ORDER', '25', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_TRANSFER_ORDER_LIST', '页面：转账订单列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_TRANSFER_ORDER', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_TRANSFER_ORDER_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_TRANSFER_ORDER', '0', 'MGR', now(), now());
-    insert into t_sys_entitlement values('ENT_MCH_NOTIFY', '商户通知', 'notification', '/notify', 'MchNotifyListPage', 'ML', 0, 1,  'ENT_ORDER', '30', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_MCH_NOTIFY', '回调记录', 'notification', '/notify', 'MchNotifyListPage', 'ML', 0, 1,  'ENT_ORDER', '30', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_NOTIFY_LIST', '页面：商户通知列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_NOTIFY', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_NOTIFY_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_NOTIFY', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_NOTIFY_RESEND', '按钮：重发通知', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_NOTIFY', '0', 'MGR', now(), now());
