@@ -21,6 +21,10 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jeequan.jeepay.core.entity.RefundOrder;
+import com.jeequan.jeepay.core.entity.MchFundFlow;
+import com.jeequan.jeepay.core.entity.MchInfo;
+import com.jeequan.jeepay.core.entity.PayOrder;
+import com.jeequan.jeepay.core.utils.AmountUtil;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.service.mapper.PayOrderMapper;
 import com.jeequan.jeepay.service.mapper.RefundOrderMapper;
@@ -44,6 +48,8 @@ import java.util.Date;
 public class RefundOrderService extends ServiceImpl<RefundOrderMapper, RefundOrder> {
 
     @Autowired private PayOrderMapper payOrderMapper;
+    @Autowired private com.jeequan.jeepay.service.mapper.MchInfoMapper mchInfoMapper;
+    @Autowired private MchFundFlowService mchFundFlowService;
 
     /** 查询商户订单 **/
     public RefundOrder queryMchOrder(String mchNo, String mchRefundNo, String refundOrderId){
@@ -91,6 +97,24 @@ public class RefundOrderService extends ServiceImpl<RefundOrderMapper, RefundOrd
         if(updateCount <= 0){
             throw new BizException("更新订单数据异常");
         }
+
+        PayOrder payOrder = payOrderMapper.selectById(refundOrder.getPayOrderId());
+        long refundAmount = refundOrder.getRefundAmount() == null ? 0L : refundOrder.getRefundAmount();
+        long refundFeePart = AmountUtil.calPercentageFee(refundAmount, payOrder.getMchFeeRate());
+        long changeAmount = -(refundAmount - refundFeePart);
+        MchInfo mchInfo = mchInfoMapper.selectById(payOrder.getMchNo());
+        long before = mchInfo == null || mchInfo.getAccountBalance() == null ? 0L : mchInfo.getAccountBalance();
+        long after = before + changeAmount;
+        MchFundFlow flow = new MchFundFlow()
+                .setMchNo(payOrder.getMchNo())
+                .setBeforeAmount(before)
+                .setChangeAmount(changeAmount)
+                .setAfterAmount(after)
+                .setBizType((byte)2)
+                .setBizOrderId(refundOrderId)
+                .setBizOrderAmount(refundAmount)
+                .setRemark("退款出账");
+        mchFundFlowService.save(flow);
 
         return true;
     }

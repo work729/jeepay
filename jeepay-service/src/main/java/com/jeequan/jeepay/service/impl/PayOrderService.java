@@ -26,10 +26,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.entity.IsvInfo;
+import com.jeequan.jeepay.core.entity.MchFundFlow;
 import com.jeequan.jeepay.core.entity.MchInfo;
 import com.jeequan.jeepay.core.entity.PayOrder;
 import com.jeequan.jeepay.core.entity.PayWay;
 import com.jeequan.jeepay.service.mapper.*;
+import com.jeequan.jeepay.service.impl.MchFundFlowService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,6 +55,7 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
     @Autowired private IsvInfoMapper isvInfoMapper;
     @Autowired private PayWayMapper payWayMapper;
     @Autowired private PayOrderDivisionRecordMapper payOrderDivisionRecordMapper;
+    @Autowired private MchFundFlowService mchFundFlowService;
 
     /** 更新订单状态  【订单生成】 --》 【支付中】 **/
     public boolean updateInit2Ing(String payOrderId, PayOrder payOrder){
@@ -81,8 +84,27 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         updateRecord.setChannelUser(channelUserId);
         updateRecord.setSuccessTime(new Date());
 
-        return update(updateRecord, new LambdaUpdateWrapper<PayOrder>()
+        boolean ok = update(updateRecord, new LambdaUpdateWrapper<PayOrder>()
                 .eq(PayOrder::getPayOrderId, payOrderId).eq(PayOrder::getState, PayOrder.STATE_ING));
+        if(!ok){
+            return false;
+        }
+        PayOrder db = getById(payOrderId);
+        long changeAmount = db.getAmount() - (db.getMchFeeAmount() == null ? 0L : db.getMchFeeAmount());
+        MchInfo mchInfo = mchInfoMapper.selectById(db.getMchNo());
+        long before = mchInfo == null || mchInfo.getAccountBalance() == null ? 0L : mchInfo.getAccountBalance();
+        long after = before + changeAmount;
+        MchFundFlow flow = new MchFundFlow()
+                .setMchNo(db.getMchNo())
+                .setBeforeAmount(before)
+                .setChangeAmount(changeAmount)
+                .setAfterAmount(after)
+                .setBizType((byte)1)
+                .setBizOrderId(db.getPayOrderId())
+                .setBizOrderAmount(db.getAmount())
+                .setRemark("支付入账");
+        mchFundFlowService.save(flow);
+        return true;
     }
 
     /** 更新订单状态  【支付中】 --》 【订单关闭】 **/

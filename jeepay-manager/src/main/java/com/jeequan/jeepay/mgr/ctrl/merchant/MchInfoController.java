@@ -26,6 +26,7 @@ import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.entity.MchInfo;
+import com.jeequan.jeepay.core.entity.MchFundFlow;
 import com.jeequan.jeepay.core.entity.SysUser;
 import com.jeequan.jeepay.core.model.ApiPageRes;
 import com.jeequan.jeepay.core.model.ApiRes;
@@ -66,6 +67,7 @@ public class MchInfoController extends CommonCtrl {
 
     @Autowired private MchInfoService mchInfoService;
     @Autowired private MchAccountChangeService mchAccountChangeService;
+    @Autowired private com.jeequan.jeepay.service.impl.MchFundFlowService mchFundFlowService;
     @Autowired private SysUserService sysUserService;
     @Autowired private SysUserAuthService sysUserAuthService;
     @Autowired private IMQSender mqSender;
@@ -307,6 +309,27 @@ public class MchInfoController extends CommonCtrl {
         SysUser sysUser = getCurrentUser().getSysUser();
         String remark = getValString("remark");
         mchAccountChangeService.changeAccount(mchNo, accountType, direction, amount, sysUser.getSysUserId(), sysUser.getRealname(), remark);
+        MchInfo mchInfo = mchInfoService.getById(mchNo);
+        long after;
+        if (accountType == MchAccountChangeService.ACCOUNT_TYPE_BALANCE) {
+            after = mchInfo.getAccountBalance() == null ? 0L : mchInfo.getAccountBalance();
+        } else {
+            after = mchInfo.getPayoutQuota() == null ? 0L : mchInfo.getPayoutQuota();
+        }
+        long changeAmount = direction == MchAccountChangeService.DIRECTION_INCREASE ? amount : -amount;
+        long before = after - changeAmount;
+        MchFundFlow flow = new MchFundFlow()
+                .setMchNo(mchNo)
+                .setBeforeAmount(before)
+                .setChangeAmount(changeAmount)
+                .setAfterAmount(after)
+                .setBizType(direction == MchAccountChangeService.DIRECTION_INCREASE ? (byte)3 : (byte)4)
+                .setBizOrderId(null)
+                .setBizOrderAmount(null)
+                .setOperatorId(sysUser.getSysUserId())
+                .setOperatorName(sysUser.getRealname())
+                .setRemark(StringUtils.isNotBlank(remark) ? remark : (direction == MchAccountChangeService.DIRECTION_INCREASE ? "人工增加" : "人工减少"));
+        mchFundFlowService.save(flow);
         return ApiRes.ok();
     }
 }
