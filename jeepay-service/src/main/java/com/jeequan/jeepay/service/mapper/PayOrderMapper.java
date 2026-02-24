@@ -40,4 +40,10 @@ public interface PayOrderMapper extends BaseMapper<PayOrder> {
 
     /** 更新订单退款金额和次数 **/
     int updateRefundAmountAndCount(@Param("payOrderId") String payOrderId, @Param("currentRefundAmount") Long currentRefundAmount);
+
+    /** 商户维度汇总分页 **/
+    com.baomidou.mybatisplus.core.metadata.IPage<Map> selectMchStatsPage(com.baomidou.mybatisplus.core.metadata.IPage<?> page, @Param("param") Map param);
+
+    /** 商户通道成功率统计 **/
+    List<Map> selectChannelSuccessStats(@Param("param") Map param);
 }

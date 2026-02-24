@@ -244,6 +244,12 @@ alter table `t_sys_role_ent_rela` MODIFY `ent_id` VARCHAR(64) NOT NULL COMMENT '
 -- 分账重试
 insert into t_sys_entitlement values('ENT_DIVISION_RECORD_RESEND', '按钮：重试', 'no-icon', '', '', 'PB', 0, 1,  'ENT_DIVISION_RECORD', '0', 'MCH', now(), now());
 
+-- 数据分析（运营平台）
+insert into t_sys_entitlement values('ENT_ANALYSIS', '数据分析', 'area-chart', '', 'RouteView', 'ML', 0, 1,  'ROOT', '70', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_ANALYSIS_MCH_STATS', '商户统计', 'profile', '/analysis/mchStats', 'AnalysisMchStatsPage', 'ML', 0, 1,  'ENT_ANALYSIS', '10', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_ANALYSIS_MCH_STATS_LIST', '页面：商户统计列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_MCH_STATS', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_ANALYSIS_MCH_STATS_VIEW', '按钮：查看通道成功率', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_MCH_STATS', '0', 'MGR', now(), now());
+
 ## -- ++++ [v1.12.0] ===> [v1.13.0] ++++
 DELETE FROM t_pay_interface_define WHERE if_code = 'wxpay';
 INSERT INTO t_pay_interface_define (if_code, if_name, config_page_type, normal_mch_params, way_codes, icon, bg_color, state, remark)
