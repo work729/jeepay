@@ -161,6 +161,24 @@ CREATE TABLE `t_mch_account_change_log` (
         KEY `idx_mch_created` (`mch_no`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户账户变动记录表';
 
+DROP TABLE IF EXISTS `t_mch_fund_flow`;
+CREATE TABLE `t_mch_fund_flow` (
+        `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+        `mch_no` VARCHAR(64) NOT NULL COMMENT '商户号',
+        `before_amount` BIGINT(20) NOT NULL COMMENT '变更前金额,单位分',
+        `change_amount` BIGINT(20) NOT NULL COMMENT '变更金额,单位分',
+        `after_amount` BIGINT(20) NOT NULL COMMENT '变更后金额,单位分',
+        `biz_type` TINYINT(6) DEFAULT NULL COMMENT '业务类型: 1-支付入账,2-退款出账,3-人工增加,4-人工减少',
+        `biz_order_id` VARCHAR(64) DEFAULT NULL COMMENT '业务订单ID',
+        `biz_order_amount` BIGINT(20) DEFAULT NULL COMMENT '业务订单金额,单位分',
+        `operator_id` BIGINT(20) DEFAULT NULL COMMENT '操作员ID',
+        `operator_name` VARCHAR(64) DEFAULT NULL COMMENT '操作员姓名',
+        `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
+        `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+        PRIMARY KEY (`id`),
+        KEY `idx_mch_created` (`mch_no`,`created_at`),
+        KEY `idx_biz_type` (`biz_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户资金流水表';
 DROP TABLE IF EXISTS t_agent_info;
 CREATE TABLE `t_agent_info` (
         `id` int NOT NULL AUTO_INCREMENT COMMENT '代理ID',
@@ -563,6 +581,9 @@ insert into t_sys_entitlement values('ENT_MCH', '商户管理', 'shop', '', 'Rou
         insert into t_sys_entitlement values('ENT_MCH_INFO_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_INFO', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_INFO_DEL', '按钮：删除', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_INFO', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_APP_CONFIG', '应用配置', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_INFO', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_MCH_FINANCE', '资金流水', 'profile', '/mch/fund', 'MchFinancePage', 'ML', 0, 1,  'ENT_MCH', '15', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_MCH_FINANCE_LIST', '页面：资金流水列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_MCH_FINANCE_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MGR', now(), now());
 
     -- 应用管理
     insert into t_sys_entitlement values('ENT_MCH_APP', '应用列表', 'appstore', '/apps', 'MchAppPage', 'ML', 0, 1,  'ENT_MCH', '20', 'MGR', now(), now());
