@@ -150,31 +150,18 @@ public class JeepayKit {
         return str;
     }
 
-    /** 校验微信/支付宝二维码是否符合规范， 并根据支付类型返回对应的支付方式  **/
+    /** 校验条码是否为云闪付并返回支付方式 **/
     public static String getPayWayCodeByBarCode(String barCode){
 
         if(StringUtils.isEmpty(barCode)) {
             throw new BizException("条码为空");
         }
 
-        //微信 ： 用户付款码条形码规则：18位纯数字，以10、11、12、13、14、15开头
-        //文档： https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=5_1
-        if(barCode.length() == 18 && Pattern.matches("^(10|11|12|13|14|15)(.*)", barCode)){
-            return CS.PAY_WAY_CODE.WX_BAR;
+        if(barCode.length() == 19 && Pattern.matches("^(62)(.*)", barCode)){
+            return CS.PAY_WAY_CODE.UP_BAR;
         }
-        //支付宝： 25~30开头的长度为16~24位的数字
-        //文档： https://docs.open.alipay.com/api_1/alipay.trade.pay/
-        else if(barCode.length() >= 16 && barCode.length() <= 24 && Pattern.matches("^(25|26|27|28|29|30)(.*)", barCode)){
-            return CS.PAY_WAY_CODE.ALI_BAR;
-        }
-        //云闪付： 二维码标准： 19位 + 62开头
-        //文档：https://wenku.baidu.com/view/b2eddcd09a89680203d8ce2f0066f5335a8167fa.html
-        else if(barCode.length() == 19 && Pattern.matches("^(62)(.*)", barCode)){
-            return CS.PAY_WAY_CODE.YSF_BAR;
-        }
-        else{  //暂时不支持的条码类型
-            throw new BizException("不支持的条码");
-        }
+
+        throw new BizException("不支持的条码");
     }
 
 }

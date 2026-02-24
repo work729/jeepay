@@ -15,7 +15,6 @@
  */
 package com.jeequan.jeepay.mch.ctrl.merchant;
 
-import com.alibaba.fastjson.JSONObject;
 import com.jeequan.jeepay.components.mq.model.ResetIsvMchAppInfoConfigMQ;
 import com.jeequan.jeepay.components.mq.vender.IMQSender;
 import com.jeequan.jeepay.core.aop.MethodLog;
@@ -185,31 +184,6 @@ public class MchPayInterfaceConfigController extends CommonCtrl {
         return ApiRes.ok();
     }
 
-    /** 查询支付宝商户授权URL **/
-    @Operation(summary = "查询支付宝商户授权URL")
-    @Parameters({
-            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "mchAppId", description = "应用ID", required = true)
-    })
-    @GetMapping("/alipayIsvsubMchAuthUrls/{mchAppId}")
-    public ApiRes queryAlipayIsvsubMchAuthUrl(@PathVariable String mchAppId) {
-
-        MchApp mchApp = mchAppService.getById(mchAppId);
-
-        if (mchApp == null || !mchApp.getMchNo().equals(getCurrentMchNo())) {
-            return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_SELETE);
-        }
-
-        MchInfo mchInfo = mchInfoService.getById(mchApp.getMchNo());
-        DBApplicationConfig dbApplicationConfig = sysConfigService.getDBApplicationConfig();
-        String authUrl = dbApplicationConfig.genAlipayIsvsubMchAuthUrl(mchInfo.getIsvNo(), mchAppId);
-        String authQrImgUrl = dbApplicationConfig.genScanImgUrl(authUrl);
-
-        JSONObject result = new JSONObject();
-        result.put("authUrl", authUrl);
-        result.put("authQrImgUrl", authQrImgUrl);
-        return ApiRes.ok(result);
-    }
 
 
     /** 查询当前应用支持的支付接口 */

@@ -51,13 +51,7 @@ public class MchAppConfigContext {
     private IsvConfigContext isvConfigContext;
 
     /** 缓存 Paypal 对象 **/
-    private PaypalWrapper paypalWrapper;
-
-    /** 缓存支付宝client 对象 **/
-    private AlipayClientWrapper alipayClientWrapper;
-
-    /** 缓存 wxServiceWrapper 对象 **/
-    private WxServiceWrapper wxServiceWrapper;
+    // 已废弃：不再缓存第三方通道封装器
 
     /** 获取普通商户配置信息 **/
     public NormalMchParams getNormalMchParamsByIfCode(String ifCode){
@@ -84,12 +78,6 @@ public class MchAppConfigContext {
         return this.mchType == MchInfo.TYPE_ISVSUB;
     }
 
-    public AlipayClientWrapper getAlipayClientWrapper(){
-        return isIsvsubMch() ? isvConfigContext.getAlipayClientWrapper(): alipayClientWrapper;
-    }
-
-    public WxServiceWrapper getWxServiceWrapper(){
-        return isIsvsubMch() ? isvConfigContext.getWxServiceWrapper(): wxServiceWrapper;
-    }
+    // 已废弃：第三方通道封装器访问器
 
 }

@@ -41,10 +41,10 @@ public class IsvConfigContext {
 
 
     /** 缓存支付宝client 对象 **/
-    private AlipayClientWrapper alipayClientWrapper;
+    private Object alipayClientWrapper;
 
     /** 缓存 wxServiceWrapper 对象 **/
-    private WxServiceWrapper wxServiceWrapper;
+    private Object wxServiceWrapper;
 
 
     /** 获取isv配置信息 **/

@@ -22,11 +22,6 @@ import com.jeequan.jeepay.core.entity.PayInterfaceConfig;
 import com.jeequan.jeepay.core.model.params.IsvParams;
 import com.jeequan.jeepay.core.model.params.IsvsubMchParams;
 import com.jeequan.jeepay.core.model.params.NormalMchParams;
-import com.jeequan.jeepay.core.model.params.alipay.AlipayIsvParams;
-import com.jeequan.jeepay.core.model.params.alipay.AlipayNormalMchParams;
-import com.jeequan.jeepay.core.model.params.pppay.PppayNormalMchParams;
-import com.jeequan.jeepay.core.model.params.wxpay.WxpayIsvParams;
-import com.jeequan.jeepay.core.model.params.wxpay.WxpayNormalMchParams;
 import com.jeequan.jeepay.pay.model.*;
 import com.jeequan.jeepay.service.impl.MchAppService;
 import com.jeequan.jeepay.service.impl.MchInfoService;
@@ -165,52 +160,6 @@ public class ConfigContextQueryService {
 
     }
 
-    public AlipayClientWrapper getAlipayClientWrapper(MchAppConfigContext mchAppConfigContext){
-
-        if(isCache()){
-            return
-                    configContextService.getMchAppConfigContext(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId()).getAlipayClientWrapper();
-        }
-
-        if(mchAppConfigContext.isIsvsubMch()){
-
-            AlipayIsvParams alipayParams = (AlipayIsvParams)queryIsvParams(mchAppConfigContext.getMchInfo().getIsvNo(), CS.IF_CODE.ALIPAY);
-            return AlipayClientWrapper.buildAlipayClientWrapper(alipayParams);
-        }else{
-
-            AlipayNormalMchParams alipayParams = (AlipayNormalMchParams)queryNormalMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), CS.IF_CODE.ALIPAY);
-            return AlipayClientWrapper.buildAlipayClientWrapper(alipayParams);
-        }
-
-    }
-
-    public WxServiceWrapper getWxServiceWrapper(MchAppConfigContext mchAppConfigContext){
-
-        if(isCache()){
-            return
-                    configContextService.getMchAppConfigContext(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId()).getWxServiceWrapper();
-        }
-
-        if(mchAppConfigContext.isIsvsubMch()){
-
-            WxpayIsvParams wxParams = (WxpayIsvParams)queryIsvParams(mchAppConfigContext.getMchInfo().getIsvNo(), CS.IF_CODE.WXPAY);
-            return WxServiceWrapper.buildWxServiceWrapper(wxParams);
-        }else{
-
-            WxpayNormalMchParams wxParams = (WxpayNormalMchParams)queryNormalMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), CS.IF_CODE.WXPAY);
-            return WxServiceWrapper.buildWxServiceWrapper(wxParams);
-        }
-
-    }
-
-    public PaypalWrapper getPaypalWrapper(MchAppConfigContext mchAppConfigContext){
-        if(isCache()){
-            return
-                    configContextService.getMchAppConfigContext(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId()).getPaypalWrapper();
-        }
-        PppayNormalMchParams ppPayNormalMchParams = (PppayNormalMchParams) queryNormalMchParams(mchAppConfigContext.getMchNo(), mchAppConfigContext.getAppId(), CS.IF_CODE.PPPAY);;
-        return PaypalWrapper.buildPaypalWrapper(ppPayNormalMchParams);
-
-    }
+    // 已废弃：第三方通道封装器访问器
 
 }

@@ -65,19 +65,11 @@ public class DBApplicationConfig implements Serializable {
         return getPaySiteUrl() + "/api/scan/imgs/" + JeepayKit.aesEncode(url) + ".png";
     }
 
-    /** 生成  【支付宝 isv子商户的授权链接地址】 **/
-    public String genAlipayIsvsubMchAuthUrl(String isvNo, String mchAppId){
-        return getPaySiteUrl() + "/api/channelbiz/alipay/redirectAppToAppAuth/" + isvNo + "_" + mchAppId;
-    }
-
     /** 生成 收银台的TOKEN  **/
     private String genQrToken(Byte type, String id){
         return JeepayKit.aesEncode(String.format("{type: %s, id: '%s'}", type, id));
     }
 
-    /** 生成  【微信转账用户确认领取链接】 **/
-    public String genTransferUserConfirm(String ifCode, String transferOrderId){
-        return getPaySiteUrl() + "/api/channelbiz/" + ifCode + "/transferUserConfirm/" + JeepayKit.aesEncode(transferOrderId);
-    }
+    // 已移除废弃通道相关生成方法
 
 }
