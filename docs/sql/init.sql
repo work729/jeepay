@@ -1,5 +1,16 @@
 #####  表结构及初始化数据SQL  #####
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户资金流水表';
 
+DROP TABLE IF EXISTS `t_mch_account_daily_snapshot`;
+CREATE TABLE `t_mch_account_daily_snapshot` (
+        `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+        `mch_no` VARCHAR(64) NOT NULL COMMENT '商户号',
+        `snapshot_amount` BIGINT(20) NOT NULL COMMENT '当日账户余额快照,单位分',
+        `snapshot_date` DATE NOT NULL COMMENT '快照日期(每天0:00更新)',
+        `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `Uni_mch_date` (`mch_no`,`snapshot_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户账户每日快照表';
 --   RBAC设计思路：  [用户] 1<->N [角色] 1<->N [权限]
 
 -- 权限表
@@ -584,6 +595,8 @@ insert into t_sys_entitlement values('ENT_MCH', '商户管理', 'shop', '', 'Rou
     insert into t_sys_entitlement values('ENT_MCH_FINANCE', '资金流水', 'profile', '/mch/fund', 'MchFinancePage', 'ML', 0, 1,  'ENT_MCH', '15', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_FINANCE_LIST', '页面：资金流水列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_FINANCE_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_MCH_ACCOUNT', '商户账户', 'profile', '/mch/account', 'MchAccountPage', 'ML', 0, 1,  'ENT_MCH', '16', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_MCH_ACCOUNT_LIST', '页面：商户账户列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_ACCOUNT', '0', 'MGR', now(), now());
 
     -- 应用管理
     insert into t_sys_entitlement values('ENT_MCH_APP', '应用列表', 'appstore', '/apps', 'MchAppPage', 'ML', 0, 1,  'ENT_MCH', '20', 'MGR', now(), now());
