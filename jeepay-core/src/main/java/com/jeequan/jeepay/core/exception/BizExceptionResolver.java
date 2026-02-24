@@ -22,12 +22,18 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 /*
 * 异常信息自定义返回数据
@@ -65,6 +71,29 @@ public class BizExceptionResolver implements HandlerExceptionResolver {
 		}else if(hasSpringSecurity && ex instanceof org.springframework.security.access.AccessDeniedException) {
 			logger.error("公共捕捉[AccessDeniedException]异常：", ex);
 			outPutJson = ApiRes.fail(ApiCodeEnum.SYS_PERMISSION_ERROR, ex.getMessage()).toJSONString();
+		}else if(ex instanceof MethodArgumentNotValidException){
+			logger.error("公共捕捉[MethodArgumentNotValidException]异常：", ex);
+			String msg = ((MethodArgumentNotValidException) ex).getBindingResult()
+					.getFieldErrors().stream().map(e -> e.getField() + ":" + e.getDefaultMessage())
+					.collect(Collectors.joining(";"));
+			outPutJson = ApiRes.fail(ApiCodeEnum.PARAMS_ERROR, msg).toJSONString();
+		}else if(ex instanceof BindException){
+			logger.error("公共捕捉[BindException]异常：", ex);
+			String msg = ((BindException) ex).getBindingResult()
+					.getFieldErrors().stream().map(e -> e.getField() + ":" + e.getDefaultMessage())
+					.collect(Collectors.joining(";"));
+			outPutJson = ApiRes.fail(ApiCodeEnum.PARAMS_ERROR, msg).toJSONString();
+		}else if(ex instanceof MissingServletRequestParameterException){
+			logger.error("公共捕捉[MissingServletRequestParameterException]异常：", ex);
+			String msg = ((MissingServletRequestParameterException) ex).getParameterName() + "缺失";
+			outPutJson = ApiRes.fail(ApiCodeEnum.PARAMS_ERROR, msg).toJSONString();
+		}else if(ex instanceof MethodArgumentTypeMismatchException){
+			logger.error("公共捕捉[MethodArgumentTypeMismatchException]异常：", ex);
+			String msg = ((MethodArgumentTypeMismatchException) ex).getName() + "类型不匹配";
+			outPutJson = ApiRes.fail(ApiCodeEnum.PARAMS_ERROR, msg).toJSONString();
+		}else if(ex instanceof HttpMessageNotReadableException){
+			logger.error("公共捕捉[HttpMessageNotReadableException]异常：", ex);
+			outPutJson = ApiRes.fail(ApiCodeEnum.PARAMS_ERROR, "请求体错误").toJSONString();
 		}else{
 			logger.error("公共捕捉[Exception]异常：",ex);
 			outPutJson = ApiRes.fail(ApiCodeEnum.SYSTEM_ERROR, ex.getMessage()).toJSONString();
@@ -82,7 +111,8 @@ public class BizExceptionResolver implements HandlerExceptionResolver {
 
 	public void outPutJson(HttpServletResponse res, String jsonStr) throws IOException {
 
-		res.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+		res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		res.setCharacterEncoding("UTF-8");
 		res.getWriter().write(jsonStr);
 		res.getWriter().flush();
 		res.getWriter().close();
