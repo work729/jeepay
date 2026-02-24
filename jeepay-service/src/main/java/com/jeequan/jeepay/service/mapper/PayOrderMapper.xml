@@ -168,4 +168,46 @@
         ORDER BY rechargeAmount DESC
     </select>
 
+    <!-- 渠道类型汇总分页（ifCode） -->
+    <select id="selectChannelStatsPage" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.if_code AS ifCode,
+            d.if_name AS ifName,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
+            ROUND(IFNULL(SUM(t.amount - IFNULL(t.mch_fee_amount,0) - IFNULL(t.refund_amount,0)),0)/100, 2) AS creditedAmount,
+            ROUND(IFNULL(SUM(t.amount * IFNULL(t.channel_fee_rate,0) / 100),0)/100, 2) AS channelFeeAmount,
+            ROUND(IFNULL(SUM(IFNULL(t.mch_fee_amount,0)),0)/100, 2) AS platformIncome,
+            0 AS agentIncome,
+            SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS rechargeCount,
+            COUNT(1) AS totalCount
+        FROM t_pay_order t
+        LEFT JOIN t_pay_interface_define d ON d.if_code = t.if_code
+        WHERE 1=1
+        <if test="param.ifCode != null and param.ifCode != ''"> AND t.if_code = #{param.ifCode} </if>
+        <if test="param.ifName != null and param.ifName != ''"> AND d.if_name LIKE CONCAT('%', #{param.ifName}, '%') </if>
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.if_code, d.if_name
+        ORDER BY rechargeAmount DESC
+    </select>
+
+    <!-- 渠道详情（ifCode 下的 wayCode） -->
+    <select id="selectChannelDetailsByIfCode" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.way_code AS channelId,
+            w.way_name AS channelName,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
+            ROUND(IFNULL(SUM(t.amount - IFNULL(t.mch_fee_amount,0) - IFNULL(t.refund_amount,0)),0)/100, 2) AS creditedAmount,
+            SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS rechargeCount,
+            COUNT(1) AS totalCount
+        FROM t_pay_order t
+        LEFT JOIN t_pay_way w ON w.way_code = t.way_code
+        WHERE 1=1
+        <if test="param.ifCode != null and param.ifCode != ''"> AND t.if_code = #{param.ifCode} </if>
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.way_code, w.way_name
+        ORDER BY rechargeAmount DESC
+    </select>
+
 </mapper>

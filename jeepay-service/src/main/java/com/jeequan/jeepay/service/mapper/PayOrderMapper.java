@@ -52,4 +52,10 @@ public interface PayOrderMapper extends BaseMapper<PayOrder> {
 
     /** 产品下商户统计 **/
     List<Map> selectProductMchStats(@Param("param") Map param);
+
+    /** 渠道类型汇总分页（按 ifCode） **/
+    com.baomidou.mybatisplus.core.metadata.IPage<Map> selectChannelStatsPage(com.baomidou.mybatisplus.core.metadata.IPage<?> page, @Param("param") Map param);
+
+    /** 渠道详情（按 ifCode 下的 wayCode） **/
+    List<Map> selectChannelDetailsByIfCode(@Param("param") Map param);
 }

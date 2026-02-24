@@ -387,6 +387,25 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         return payOrderMapper.selectProductMchStats(param);
     }
 
+    /** 渠道类型汇总分页 **/
+    public com.baomidou.mybatisplus.core.metadata.IPage<Map> channelStatsPage(com.baomidou.mybatisplus.core.metadata.IPage<?> page, String ifCode, String ifName, String createdStart, String createdEnd) {
+        Map param = new HashMap<>();
+        if (StrUtil.isNotBlank(ifCode)) { param.put("ifCode", ifCode); }
+        if (StrUtil.isNotBlank(ifName)) { param.put("ifName", ifName); }
+        if (StrUtil.isNotBlank(createdStart)) { param.put("createTimeStart", createdStart); }
+        if (StrUtil.isNotBlank(createdEnd)) { param.put("createTimeEnd", createdEnd); }
+        return payOrderMapper.selectChannelStatsPage(page, param);
+    }
+
+    /** 渠道详情（按 ifCode 下的 wayCode） **/
+    public List<Map> channelDetailsByIfCode(String ifCode, String createdStart, String createdEnd) {
+        Map param = new HashMap<>();
+        if (StrUtil.isNotBlank(ifCode)) { param.put("ifCode", ifCode); }
+        if (StrUtil.isNotBlank(createdStart)) { param.put("createTimeStart", createdStart); }
+        if (StrUtil.isNotBlank(createdEnd)) { param.put("createTimeEnd", createdEnd); }
+        return payOrderMapper.selectChannelDetailsByIfCode(param);
+    }
+
     /** 生成首页交易统计数据类型 **/
     public List<Map> getReturnList(int daySpace, String createdStart, List<Map> payAndRefundOrderList) {
         List<Map> dayList = new ArrayList<>();

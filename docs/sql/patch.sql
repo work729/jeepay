@@ -252,6 +252,9 @@ insert into t_sys_entitlement values('ENT_ANALYSIS', '数据分析', 'area-chart
     insert into t_sys_entitlement values('ENT_ANALYSIS_PRODUCT_STATS', '产品统计', 'profile', '/analysis/productStats', 'AnalysisProductStatsPage', 'ML', 0, 1,  'ENT_ANALYSIS', '20', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_ANALYSIS_PRODUCT_STATS_LIST', '页面：产品统计列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_PRODUCT_STATS', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_ANALYSIS_PRODUCT_STATS_VIEW', '按钮：查看产品商户统计', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_PRODUCT_STATS', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_ANALYSIS_CHANNEL_STATS', '渠道统计', 'profile', '/analysis/channelStats', 'AnalysisChannelStatsPage', 'ML', 0, 1,  'ENT_ANALYSIS', '30', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_ANALYSIS_CHANNEL_STATS_LIST', '页面：渠道统计列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_CHANNEL_STATS', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_ANALYSIS_CHANNEL_STATS_VIEW', '按钮：查看渠道详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_CHANNEL_STATS', '0', 'MGR', now(), now());
 
 ## -- ++++ [v1.12.0] ===> [v1.13.0] ++++
 DELETE FROM t_pay_interface_define WHERE if_code = 'wxpay';
