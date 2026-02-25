@@ -86,6 +86,12 @@ public class PayOrder extends BaseModel implements Serializable {
     private String isvNo;
 
     /**
+     * 代理ID
+     */
+    @Schema(title = "agentId", description = "代理ID")
+    private Long agentId;
+
+    /**
      * 应用ID
      */
     @Schema(title = "appId", description = "应用ID")

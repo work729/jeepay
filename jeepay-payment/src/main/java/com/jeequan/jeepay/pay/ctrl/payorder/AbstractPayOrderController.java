@@ -233,6 +233,7 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setPayOrderId(SeqKit.genPayOrderId()); //生成订单ID
         payOrder.setMchNo(mchInfo.getMchNo()); //商户号
         payOrder.setIsvNo(mchInfo.getIsvNo()); //服务商号
+        payOrder.setAgentId(mchInfo.getAgentId()); //代理ID
         payOrder.setMchName(mchInfo.getMchShortName()); //商户名称（简称）
         payOrder.setMchType(mchInfo.getType()); //商户类型
         payOrder.setMchOrderNo(rq.getMchOrderNo()); //商户订单号
