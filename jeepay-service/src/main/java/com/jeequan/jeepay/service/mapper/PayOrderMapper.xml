@@ -122,16 +122,20 @@
     <!-- 商户通道成功率统计 -->
     <select id="selectChannelSuccessStats" resultType="java.util.Map" parameterType="java.util.Map">
         SELECT
-            t.way_code AS wayCode,
-            COUNT(1) AS totalCount,
+            t.channel_id AS channelId,
+            c.if_code     AS ifCode,
+            c.channel_name AS channelName,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
+            COUNT(1) AS rechargeCount,
             SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS successCount
         FROM t_pay_order t
+        LEFT JOIN t_pay_channel c ON c.id = t.channel_id
         WHERE 1=1
         <if test="param.mchNo != null and param.mchNo != ''"> AND t.mch_no = #{param.mchNo} </if>
         <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
         <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
-        GROUP BY t.way_code
-        ORDER BY totalCount DESC
+        GROUP BY t.channel_id, c.if_code, c.channel_name
+        ORDER BY rechargeAmount DESC
     </select>
 
     <!-- 产品维度汇总分页 -->
