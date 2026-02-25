@@ -136,16 +136,19 @@ public abstract class AbstractPayOrderController extends ApiController {
             }
 
             //获取支付参数 (缓存数据) 和 商户信息
-            MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(mchNo, appId);
+            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(appId)
+                    ? configContextQueryService.getMchInfoContext(mchNo)
+                    : configContextQueryService.queryMchInfoAndAppInfo(mchNo, appId);
             if(mchAppConfigContext == null){
-                throw new BizException("获取商户应用信息失败");
+                throw new BizException("获取商户信息失败");
             }
 
             MchInfo mchInfo = mchAppConfigContext.getMchInfo();
             MchApp mchApp = mchAppConfigContext.getMchApp();
-
-            if(mchApp == null || mchApp.getState() != CS.YES){
-                throw new BizException("商户应用状态不可用");
+            if(StringUtils.isNotBlank(appId)){
+                if(mchApp == null || mchApp.getState() != CS.YES){
+                    throw new BizException("商户应用状态不可用");
+                }
             }
 
             RouteConfig routeConfig = findRouteConfig(mchAppConfigContext, wayCode);
@@ -242,7 +245,7 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setMchName(mchInfo.getMchShortName()); //商户名称（简称）
         payOrder.setMchType(mchInfo.getType()); //商户类型
         payOrder.setMchOrderNo(rq.getMchOrderNo()); //商户订单号
-        payOrder.setAppId(mchApp.getAppId()); //商户应用appId
+        payOrder.setAppId(mchApp == null ? null : mchApp.getAppId()); //商户应用appId
         payOrder.setIfCode(ifCode); //接口代码
         payOrder.setWayCode(rq.getWayCode()); //支付方式
         payOrder.setAmount(rq.getAmount()); //订单金额
@@ -382,7 +385,11 @@ public abstract class AbstractPayOrderController extends ApiController {
             bizRS.setErrMsg(bizRS.getChannelRetMsg() != null ? bizRS.getChannelRetMsg().getChannelErrMsg() : null);
         }
 
-        return ApiRes.okWithSign(bizRS, configContextQueryService.queryMchApp(bizRQ.getMchNo(), bizRQ.getAppId()).getAppSecret());
+        MchApp app = StringUtils.isBlank(bizRQ.getAppId()) ? null : configContextQueryService.queryMchApp(bizRQ.getMchNo(), bizRQ.getAppId());
+        if(app == null){
+            return ApiRes.ok(bizRS);
+        }
+        return ApiRes.okWithSign(bizRS, app.getAppSecret());
     }
 
 
@@ -469,7 +476,7 @@ public abstract class AbstractPayOrderController extends ApiController {
             }
         }
 
-        throw new BizException("商户应用不支持该支付方式");
+        throw new BizException("商户不支持该支付方式");
     }
 
 

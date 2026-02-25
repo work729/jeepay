@@ -67,8 +67,9 @@ public class PayMchNotifyService {
                 return ;
             }
 
-            //商户app私钥
-            String appSecret = configContextQueryService.queryMchApp(dbPayOrder.getMchNo(), dbPayOrder.getAppId()).getAppSecret();
+            //商户app私钥（appId 为空时不签名）
+            String appSecret = StringUtils.isBlank(dbPayOrder.getAppId()) ? null
+                    : configContextQueryService.queryMchApp(dbPayOrder.getMchNo(), dbPayOrder.getAppId()).getAppSecret();
 
             // 封装通知url
             String notifyUrl = createNotifyUrl(dbPayOrder, appSecret);
@@ -118,8 +119,9 @@ public class PayMchNotifyService {
                 return ;
             }
 
-            //商户app私钥
-            String appSecret = configContextQueryService.queryMchApp(dbRefundOrder.getMchNo(), dbRefundOrder.getAppId()).getAppSecret();
+            //商户app私钥（appId 为空时不签名）
+            String appSecret = StringUtils.isBlank(dbRefundOrder.getAppId()) ? null
+                    : configContextQueryService.queryMchApp(dbRefundOrder.getMchNo(), dbRefundOrder.getAppId()).getAppSecret();
 
             // 封装通知url
             String notifyUrl = createNotifyUrl(dbRefundOrder, appSecret);
@@ -169,8 +171,9 @@ public class PayMchNotifyService {
                 return ;
             }
 
-            //商户app私钥
-            String appSecret = configContextQueryService.queryMchApp(dbTransferOrder.getMchNo(), dbTransferOrder.getAppId()).getAppSecret();
+            //商户app私钥（appId 为空时不签名）
+            String appSecret = StringUtils.isBlank(dbTransferOrder.getAppId()) ? null
+                    : configContextQueryService.queryMchApp(dbTransferOrder.getMchNo(), dbTransferOrder.getAppId()).getAppSecret();
 
             // 封装通知url
             String notifyUrl = createNotifyUrl(dbTransferOrder, appSecret);
@@ -213,7 +216,9 @@ public class PayMchNotifyService {
         jsonObject.put("reqTime", System.currentTimeMillis()); //添加请求时间
 
         // 报文签名
-        jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));
+        if(StringUtils.isNotBlank(appSecret)){
+            jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));
+        }
 
         // 生成通知
         return StringKit.appendUrlQuery(payOrder.getNotifyUrl(), jsonObject);
@@ -230,7 +235,9 @@ public class PayMchNotifyService {
         jsonObject.put("reqTime", System.currentTimeMillis()); //添加请求时间
 
         // 报文签名
-        jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));
+        if(StringUtils.isNotBlank(appSecret)){
+            jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));
+        }
 
         // 生成通知
         return StringKit.appendUrlQuery(refundOrder.getNotifyUrl(), jsonObject);
@@ -247,7 +254,9 @@ public class PayMchNotifyService {
         jsonObject.put("reqTime", System.currentTimeMillis()); //添加请求时间
 
         // 报文签名
-        jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));
+        if(StringUtils.isNotBlank(appSecret)){
+            jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));
+        }
 
         // 生成通知
         return StringKit.appendUrlQuery(transferOrder.getNotifyUrl(), jsonObject);
@@ -268,7 +277,9 @@ public class PayMchNotifyService {
         jsonObject.put("reqTime", System.currentTimeMillis()); //添加请求时间
 
         // 报文签名
-        jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));   // 签名
+        if(StringUtils.isNotBlank(appSecret)){
+            jsonObject.put("sign", JeepayKit.getSign(jsonObject, appSecret));   // 签名
+        }
 
         // 生成跳转地址
         return StringKit.appendUrlQuery(payOrder.getReturnUrl(), jsonObject);

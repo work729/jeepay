@@ -122,27 +122,19 @@ public class PaytestController extends CommonCtrl {
     /** 调起下单接口 **/
     @Operation(summary = "调起下单接口")
     @Parameters({
-            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "mchId", description = "商户ID", required = true),
+            @Parameter(name = "productId", description = "产品ID", required = true),
             @Parameter(name = "mchOrderNo", description = "商户订单号", required = true),
-            @Parameter(name = "appId", description = "应用ID"),
-            @Parameter(name = "wayCode", description = "支付方式代码", required = true),
             @Parameter(name = "amount", description = "转账金额,单位元", required = true),
-            @Parameter(name = "returnUrl", description = "页面跳转地址", required = true),
-            @Parameter(name = "orderTitle", description = "订单标题", required = true),
-            @Parameter(name = "expiredTime", description = "过期时间"),
-            @Parameter(name = "clientIp", description = "客户端IP"),
-            @Parameter(name = "notifyUrl", description = "通知地址"),
-            @Parameter(name = "channelExtra", description = "特定渠道发起时额外参数"),
-            @Parameter(name = "payDataType", description = "支付数据包 类型，eg：form--表单提交，wxapp--微信app参数，aliapp--支付宝app参数，ysfapp--云闪付app参数，codeUrl--二维码URL，codeImgUrl--二维码图片显示URL，none--无参数"),
-            @Parameter(name = "authCode", description = "支付条码"),
-            @Parameter(name = "extParam", description = "扩展参数")
+            @Parameter(name = "notifyUrl", description = "通知地址", required = true),
+            @Parameter(name = "returnUrl", description = "页面跳转地址"),
+            @Parameter(name = "param2", description = "如透传参数有值,回调会一起返回"),
     })
     @PreAuthorize("hasAuthority('ENT_MCH_PAY_TEST_DO')")
     @PostMapping("/payOrders")
     public ApiRes doPay() {
 
         //获取请求参数
-        String appId = getValString("appId");
         Long productId = getValLong("productId");
         Long amount = getRequiredAmountL("amount");
         String mchOrderNo = getValStringRequired("mchOrderNo");
@@ -176,25 +168,6 @@ public class PaytestController extends CommonCtrl {
             }
         }
 
-        MchApp mchApp;
-        if (StringUtils.isNotEmpty(appId)) {
-            mchApp = mchAppService.getById(appId);
-        } else {
-            mchApp = mchAppService.getOne(
-                    MchApp.gw()
-                            .eq(MchApp::getMchNo, getCurrentMchNo())
-                            .eq(MchApp::getState, CS.PUB_USABLE)
-                            .last("limit 1")
-            );
-            if (mchApp != null) {
-                appId = mchApp.getAppId();
-            }
-        }
-
-        if(mchApp == null || mchApp.getState() != CS.PUB_USABLE || !mchApp.getAppId().equals(appId)){
-            throw new BizException("商户应用不存在或不可用");
-        }
-
         if (productId != null) {
             List<PayProductChannel> relations = payProductChannelService.list(
                     PayProductChannel.gw().eq(PayProductChannel::getProductId, productId)
@@ -217,48 +190,45 @@ public class PaytestController extends CommonCtrl {
             }
         }
 
-        PayOrderCreateRequest request = new PayOrderCreateRequest();
-        PayOrderCreateReqModel model = new PayOrderCreateReqModel();
-        request.setBizModel(model);
-
-        model.setMchNo(getCurrentMchNo()); // 商户号
-        model.setAppId(appId);
-        model.setMchOrderNo(mchOrderNo);
-        model.setWayCode(wayCode);
-        model.setAmount(amount);
-        // paypal通道使用USD类型货币
-        if(wayCode.equalsIgnoreCase("pp_pc")) {
-            model.setCurrency("USD");
-        }else {
-            model.setCurrency("CNY");
-        }
-        model.setClientIp(getClientIp());
-        model.setSubject(orderTitle + "[" + getCurrentMchNo() + "商户联调]");
-        model.setBody(orderTitle + "[" + getCurrentMchNo() + "商户联调]");
-
+        // 改为直连支付网关统一下单接口（不再使用应用ID/SDK）
         DBApplicationConfig dbApplicationConfig = sysConfigService.getDBApplicationConfig();
+        String payApi = dbApplicationConfig.getPaySiteUrl() + "/api/pay/unifiedOrder";
 
-        model.setNotifyUrl(dbApplicationConfig.getMchSiteUrl() + "/api/anon/paytestNotify/payOrder"); //回调地址
-
-        //设置扩展参数
+        JSONObject body = new JSONObject();
+        body.put("mchNo", getCurrentMchNo());
+        body.put("mchOrderNo", mchOrderNo);
+        body.put("wayCode", wayCode);
+        body.put("amount", amount);
+        body.put("currency", wayCode.equalsIgnoreCase("pp_pc") ? "USD" : "CNY");
+        body.put("clientIp", getClientIp());
+        body.put("subject", orderTitle + "[" + getCurrentMchNo() + "商户联调]");
+        body.put("body", orderTitle + "[" + getCurrentMchNo() + "商户联调]");
+        body.put("notifyUrl", dbApplicationConfig.getMchSiteUrl() + "/api/anon/paytestNotify/payOrder");
+        // 可选返回地址
+        String returnUrl = getValString("returnUrl");
+        if(StringUtils.isNotBlank(returnUrl)){
+            body.put("returnUrl", returnUrl);
+        }
+        // 扩展参数
         JSONObject extParams = new JSONObject();
-        if(StringUtils.isNotEmpty(payDataType)) {
-            extParams.put("payDataType", payDataType.trim());
-        }
-        if(StringUtils.isNotEmpty(authCode)) {
-            extParams.put("authCode", authCode.trim());
-        }
-        model.setChannelExtra(extParams.toString());
+        if(StringUtils.isNotEmpty(payDataType)) { extParams.put("payDataType", payDataType.trim()); }
+        if(StringUtils.isNotEmpty(authCode)) { extParams.put("authCode", authCode.trim()); }
+        if(!extParams.isEmpty()){ body.put("channelExtra", extParams.toString()); }
+        // 验签占位（服务端在无 appId 情况下不做验签，但要求存在 signType 与 sign 字段）
+        body.put("signType", "MD5");
+        body.put("sign", "IGNORE");
 
-        JeepayClient jeepayClient = new JeepayClient(dbApplicationConfig.getPaySiteUrl(), mchApp.getAppSecret());
-
-        try {
-            PayOrderCreateResponse response = jeepayClient.execute(request);
-            if(response.getCode() != 0){
-                throw new BizException(response.getMsg());
+        org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
+        try{
+            String respStr = rt.postForObject(payApi, body, String.class);
+            JSONObject resp = JSONObject.parseObject(respStr);
+            Integer code = resp.getInteger("code");
+            String msg = resp.getString("msg");
+            if(code == null || code != 0){
+                throw new BizException(StringUtils.defaultIfBlank(msg, "请求失败"));
             }
-            return ApiRes.ok(response.get());
-        } catch (JeepayException e) {
+            return ApiRes.ok(resp.getJSONObject("data"));
+        }catch (Exception e){
             throw new BizException(e.getMessage());
         }
     }

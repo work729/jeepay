@@ -31,7 +31,6 @@ import java.io.Serializable;
 public abstract class AbstractRQ implements Serializable {
 
     /** 版本号 **/
-    @NotBlank(message="版本号不能为空")
     protected String version;
 
     /** 签名类型 **/
@@ -43,7 +42,6 @@ public abstract class AbstractRQ implements Serializable {
     protected String sign;
 
     /** 接口请求时间 **/
-    @NotBlank(message="时间戳不能为空")
     protected String reqTime;
 
 }

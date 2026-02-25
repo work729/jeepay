@@ -117,8 +117,10 @@ public class ChannelNoticeController extends AbstractCtrl {
                 return this.toReturnPage("支付订单不存在");
             }
 
-            //查询出商户应用的配置信息
-            MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
+            //查询出商户（或应用）配置信息
+            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(payOrder.getAppId())
+                    ? configContextQueryService.getMchInfoContext(payOrder.getMchNo())
+                    : configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
 
             //调起接口的回调判断
             ChannelRetMsg notifyResult = payNotifyService.doNotice(request, mutablePair.getRight(), payOrder, mchAppConfigContext, IChannelNoticeService.NoticeTypeEnum.DO_RETURN);
@@ -142,7 +144,8 @@ public class ChannelNoticeController extends AbstractCtrl {
             //包含通知地址时
             if(hasReturnUrl){
                 // 重定向
-                response.sendRedirect(payMchNotifyService.createReturnUrl(payOrder, mchAppConfigContext.getMchApp().getAppSecret()));
+                String appSecret = (mchAppConfigContext.getMchApp() == null) ? null : mchAppConfigContext.getMchApp().getAppSecret();
+                response.sendRedirect(payMchNotifyService.createReturnUrl(payOrder, appSecret));
                 return null;
             }else{
 
@@ -214,8 +217,10 @@ public class ChannelNoticeController extends AbstractCtrl {
                 return payNotifyService.doNotifyOrderNotExists(request);
             }
 
-            //查询出商户应用的配置信息
-            MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
+            //查询出商户（或应用）配置信息
+            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(payOrder.getAppId())
+                    ? configContextQueryService.getMchInfoContext(payOrder.getMchNo())
+                    : configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
 
 
             //调起接口的回调判断
@@ -295,13 +300,16 @@ public class ChannelNoticeController extends AbstractCtrl {
                 this.toReturnPage("支付订单不存在");
             }
 
-            //查询出商户应用的配置信息
-            MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
+            //查询出商户（或应用）配置信息
+            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(payOrder.getAppId())
+                    ? configContextQueryService.getMchInfoContext(payOrder.getMchNo())
+                    : configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
 
             if (StringUtils.isBlank(payOrder.getReturnUrl())) {
                 this.toReturnPage(null);
             }
-            response.sendRedirect(payMchNotifyService.createReturnUrl(payOrder, mchAppConfigContext.getMchApp().getAppSecret()));
+            String appSecret = (mchAppConfigContext.getMchApp() == null) ? null : mchAppConfigContext.getMchApp().getAppSecret();
+            response.sendRedirect(payMchNotifyService.createReturnUrl(payOrder, appSecret));
         }
     }
 

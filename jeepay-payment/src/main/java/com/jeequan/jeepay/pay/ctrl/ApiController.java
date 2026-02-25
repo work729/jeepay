@@ -67,7 +67,7 @@ public abstract class ApiController extends AbstractCtrl {
         String sign = bizRQ.getSign();
         String signType = bizRQ.getSignType();
 
-        if(StringUtils.isAnyBlank(mchNo, appId, sign, signType)){
+        if(StringUtils.isAnyBlank(mchNo, sign, signType)){
             throw new BizException("参数有误！");
         }
 
@@ -75,33 +75,41 @@ public abstract class ApiController extends AbstractCtrl {
             throw new BizException("签名类型有误");
         }
 
-        MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(mchNo, appId);
+        if(StringUtils.isBlank(appId)){
+            MchAppConfigContext mchInfoContext = configContextQueryService.getMchInfoContext(mchNo);
+            if(mchInfoContext == null || mchInfoContext.getMchInfo() == null || mchInfoContext.getMchInfo().getState() != CS.YES){
+                throw new BizException("商户信息不存在或商户状态不可用");
+            }
+            return bizRQ;
+        }else{
+            MchAppConfigContext mchAppConfigContext = configContextQueryService.queryMchInfoAndAppInfo(mchNo, appId);
 
-        if(mchAppConfigContext == null){
-            throw new BizException("商户或商户应用不存在");
-        }
+            if(mchAppConfigContext == null){
+                throw new BizException("商户或商户应用不存在");
+            }
 
-        if(mchAppConfigContext.getMchInfo() == null || mchAppConfigContext.getMchInfo().getState() != CS.YES){
-            throw new BizException("商户信息不存在或商户状态不可用");
-        }
+            if(mchAppConfigContext.getMchInfo() == null || mchAppConfigContext.getMchInfo().getState() != CS.YES){
+                throw new BizException("商户信息不存在或商户状态不可用");
+            }
 
-        MchApp mchApp = mchAppConfigContext.getMchApp();
-        if(mchApp == null || mchApp.getState() != CS.YES){
-            throw new BizException("商户应用不存在或应用状态不可用");
-        }
+            MchApp mchApp = mchAppConfigContext.getMchApp();
+            if(mchApp == null || mchApp.getState() != CS.YES){
+                throw new BizException("商户应用不存在或应用状态不可用");
+            }
 
-        if(!mchApp.getMchNo().equals(mchNo)){
-            throw new BizException("参数appId与商户号不匹配");
-        }
+            if(!mchApp.getMchNo().equals(mchNo)){
+                throw new BizException("参数appId与商户号不匹配");
+            }
 
-        // 验签
-        String appSecret = mchApp.getAppSecret();
+            // 验签
+            String appSecret = mchApp.getAppSecret();
 
-        // 转换为 JSON
-        JSONObject bizReqJSON = (JSONObject)JSONObject.toJSON(bizRQ);
-        bizReqJSON.remove("sign");
-        if(!sign.equalsIgnoreCase(JeepayKit.getSign(bizReqJSON, appSecret))){
-             throw new BizException("验签失败");
+            // 转换为 JSON
+            JSONObject bizReqJSON = (JSONObject)JSONObject.toJSON(bizRQ);
+            bizReqJSON.remove("sign");
+            if(!sign.equalsIgnoreCase(JeepayKit.getSign(bizReqJSON, appSecret))){
+                 throw new BizException("验签失败");
+            }
         }
 
         return bizRQ;

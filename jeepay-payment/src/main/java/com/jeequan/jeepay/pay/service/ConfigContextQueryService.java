@@ -162,4 +162,39 @@ public class ConfigContextQueryService {
 
     // 已废弃：第三方通道封装器访问器
 
+    /** 获取仅商户维度的配置信息上下文（无应用） **/
+    public MchAppConfigContext getMchInfoContext(String mchNo){
+        MchInfo mchInfo = mchInfoService.getById(mchNo);
+        if(mchInfo == null){
+            return null;
+        }
+        MchAppConfigContext ctx = new MchAppConfigContext();
+        ctx.setMchNo(mchInfo.getMchNo());
+        ctx.setMchType(mchInfo.getType());
+        ctx.setMchInfo(mchInfo);
+        if(mchInfo.getType() == CS.MCH_TYPE_NORMAL){
+            payInterfaceConfigService.list(PayInterfaceConfig.gw()
+                    .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
+                    .eq(PayInterfaceConfig::getState, CS.YES)
+                    .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH)
+                    .eq(PayInterfaceConfig::getInfoId, mchNo)
+            ).forEach(cfg -> ctx.getNormalMchParamsMap().put(
+                    cfg.getIfCode(),
+                    NormalMchParams.factory(cfg.getIfCode(), cfg.getIfParams())
+            ));
+        }else{
+            payInterfaceConfigService.list(PayInterfaceConfig.gw()
+                    .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
+                    .eq(PayInterfaceConfig::getState, CS.YES)
+                    .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH)
+                    .eq(PayInterfaceConfig::getInfoId, mchNo)
+            ).forEach(cfg -> ctx.getIsvsubMchParamsMap().put(
+                    cfg.getIfCode(),
+                    IsvsubMchParams.factory(cfg.getIfCode(), cfg.getIfParams())
+            ));
+            ctx.setIsvConfigContext(configContextService.getIsvConfigContext(mchInfo.getIsvNo()));
+        }
+        return ctx;
+    }
+
 }

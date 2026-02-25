@@ -34,8 +34,7 @@ public class AbstractMchAppRQ extends AbstractRQ {
     @NotBlank(message="商户号不能为空")
     private String mchNo;
 
-    /** 商户应用ID **/
-    @NotBlank(message="商户应用ID不能为空")
+    /** 商户应用ID（可选） **/
     private String appId;
 
 
