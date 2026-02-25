@@ -156,11 +156,14 @@ public abstract class AbstractPayOrderController extends ApiController {
             Long routeProductId = routeConfig.getProductId();
             BigDecimal routeChannelRate = routeConfig.getChannelRate();
             BigDecimal routeMchRate = routeConfig.getMchRate();
+            Long routeChannelId = routeConfig.getChannelId();
 
             if(isNewOrder){
                 payOrder = genPayOrder(bizRQ, mchInfo, mchApp, ifCode, routeConfig.getMchRate());
                 // 设置产品信息与通道费率
                 payOrder.setProductId(routeProductId);
+                payOrder.setChannelId(routeChannelId);
+                payOrder.setChannelProviderId(routeConfig.getIfCode());
                 payOrder.setChannelName(routeConfig.getChannelName());
                 payOrder.setChannelFeeRate(routeChannelRate);
                 payOrder.setChannelIfCode(routeConfig.getIfCode());
@@ -171,6 +174,8 @@ public abstract class AbstractPayOrderController extends ApiController {
                 payOrder.setMchFeeAmount(AmountUtil.calPercentageFee(payOrder.getAmount(), payOrder.getMchFeeRate()));
                 // 更新产品信息与通道费率
                 payOrder.setProductId(routeProductId);
+                payOrder.setChannelId(routeChannelId);
+                payOrder.setChannelProviderId(routeConfig.getIfCode());
                 payOrder.setChannelName(routeConfig.getChannelName());
                 payOrder.setChannelFeeRate(routeChannelRate);
                 payOrder.setChannelIfCode(routeConfig.getIfCode());
@@ -460,7 +465,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 if(rate == null){
                     rate = BigDecimal.ZERO;
                 }
-                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign());
+                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign(), channel.getId());
             }
         }
 
@@ -476,14 +481,16 @@ public abstract class AbstractPayOrderController extends ApiController {
         private final BigDecimal channelRate;
         private final String channelName;
         private final String channelSign;
+        private final Long channelId;
 
-        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate, String channelName, String channelSign) {
+        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate, String channelName, String channelSign, Long channelId) {
             this.ifCode = ifCode;
             this.mchRate = mchRate;
             this.productId = productId;
             this.channelRate = channelRate;
             this.channelName = channelName;
             this.channelSign = channelSign;
+            this.channelId = channelId;
         }
 
         public String getIfCode() {
@@ -508,6 +515,10 @@ public abstract class AbstractPayOrderController extends ApiController {
         
         public String getChannelSign() {
             return channelSign;
+        }
+        
+        public Long getChannelId() {
+            return channelId;
         }
     }
 

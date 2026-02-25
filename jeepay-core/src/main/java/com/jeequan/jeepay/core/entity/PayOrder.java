@@ -140,6 +140,18 @@ public class PayOrder extends BaseModel implements Serializable {
     private Long productId;
 
     /**
+     * 通道ID
+     */
+    @Schema(title = "channelId", description = "通道ID")
+    private Long channelId;
+
+    /**
+     * 通道商ID（t_pay_interface_define.if_code）
+     */
+    @Schema(title = "channelProviderId", description = "通道商ID（t_pay_interface_define.if_code）")
+    private String channelProviderId;
+
+    /**
      * 产品名称
      */
     @Schema(title = "channelName", description = "通道名称")
