@@ -29,8 +29,6 @@ import com.jeequan.jeepay.core.entity.PayProduct;
 import com.jeequan.jeepay.core.entity.PayProductChannel;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
-import com.jeequan.jeepay.core.model.DBApplicationConfig;
-import com.jeequan.jeepay.core.model.QRCodeParams;
 import com.jeequan.jeepay.core.utils.AmountUtil;
 import com.jeequan.jeepay.core.utils.JsonKit;
 import com.jeequan.jeepay.core.utils.SeqKit;
@@ -43,19 +41,15 @@ import com.jeequan.jeepay.pay.model.MchAppConfigContext;
 import com.jeequan.jeepay.pay.rqrs.msg.ChannelRetMsg;
 import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRQ;
 import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRS;
-import com.jeequan.jeepay.pay.rqrs.payorder.payway.QrCashierOrderRQ;
-import com.jeequan.jeepay.pay.rqrs.payorder.payway.QrCashierOrderRS;
 import com.jeequan.jeepay.pay.service.ConfigContextQueryService;
 import com.jeequan.jeepay.pay.service.PayOrderProcessService;
 import com.jeequan.jeepay.service.impl.MchPayProductService;
 import com.jeequan.jeepay.service.impl.PayProductService;
 import com.jeequan.jeepay.service.impl.PayChannelService;
-import com.jeequan.jeepay.service.impl.PayInterfaceDefineService;
 import com.jeequan.jeepay.service.impl.PayOrderService;
 import com.jeequan.jeepay.service.impl.PayProductChannelService;
 import com.jeequan.jeepay.service.impl.SysConfigService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -65,7 +59,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /*
@@ -168,9 +161,9 @@ public abstract class AbstractPayOrderController extends ApiController {
             JSONObject extObj = StringUtils.isNotBlank(originExt) ? JSONObject.parseObject(originExt) : JsonKit.newJson("_", "_");
             extObj.put("productId", routeProductId);
             PayProduct pp = routeProductId != null ? payProductService.getById(routeProductId) : null;
-            extObj.put("productName", pp != null ? pp.getProductName() : null);
             extObj.put("channelFeeRate", routeChannelRate);
             extObj.put("mchFeeRate", routeMchRate);
+            extObj.put("channelName", routeConfig.getChannelName());
             bizRQ.setExtParam(extObj.toJSONString());
 
             if(isNewOrder){
@@ -178,7 +171,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 // 设置产品信息与通道费率
                 payOrder.setProductId(routeProductId);
                 PayProduct ppNew = routeProductId != null ? payProductService.getById(routeProductId) : null;
-                payOrder.setProductName(ppNew != null ? ppNew.getProductName() : null);
+                payOrder.setChannelName(ppNew != null ? routeConfig.getChannelName() : null);
                 payOrder.setChannelFeeRate(routeChannelRate);
             }else{
                 payOrder.setIfCode(ifCode);
@@ -187,7 +180,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 // 更新产品信息与通道费率
                 payOrder.setProductId(routeProductId);
                 PayProduct ppUpd = routeProductId != null ? payProductService.getById(routeProductId) : null;
-                payOrder.setProductName(ppUpd != null ? ppUpd.getProductName() : null);
+                payOrder.setChannelName(ppUpd != null ? routeConfig.getChannelName() : null);
                 payOrder.setChannelFeeRate(routeChannelRate);
                 // 同步更新订单扩展参数，确保渠道请求收到最新扩展字段
                 String payOrderExt = payOrder.getExtParam();
@@ -197,6 +190,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 extUpd.put("productName", ppu != null ? ppu.getProductName() : null);
                 extUpd.put("channelFeeRate", routeChannelRate);
                 extUpd.put("mchFeeRate", routeMchRate);
+                extUpd.put("channelName", routeConfig.getChannelName());
                 payOrder.setExtParam(extUpd.toJSONString());
                 bizRQ.setExtParam(payOrder.getExtParam());
             }
@@ -260,7 +254,6 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setMchName(mchInfo.getMchShortName()); //商户名称（简称）
         payOrder.setMchType(mchInfo.getType()); //商户类型
         payOrder.setMchOrderNo(rq.getMchOrderNo()); //商户订单号
-        payOrder.setAppId(mchApp.getAppId()); //商户应用appId
         payOrder.setIfCode(ifCode); //接口代码
         payOrder.setWayCode(rq.getWayCode()); //支付方式
         payOrder.setAmount(rq.getAmount()); //订单金额
@@ -483,7 +476,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 if(rate == null){
                     rate = BigDecimal.ZERO;
                 }
-                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate());
+                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate(), channel.getChannelName());
             }
         }
 
@@ -497,12 +490,14 @@ public abstract class AbstractPayOrderController extends ApiController {
         private final BigDecimal mchRate;
         private final Long productId;
         private final BigDecimal channelRate;
+        private final String channelName;
 
-        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate) {
+        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate, String channelName) {
             this.ifCode = ifCode;
             this.mchRate = mchRate;
             this.productId = productId;
             this.channelRate = channelRate;
+            this.channelName = channelName;
         }
 
         public String getIfCode() {
@@ -519,6 +514,10 @@ public abstract class AbstractPayOrderController extends ApiController {
 
         public BigDecimal getChannelRate() {
             return channelRate;
+        }
+        
+        public String getChannelName() {
+            return channelName;
         }
     }
 
