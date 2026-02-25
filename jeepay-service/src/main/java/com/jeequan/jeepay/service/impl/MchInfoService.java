@@ -16,6 +16,7 @@
 package com.jeequan.jeepay.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
 import com.jeequan.jeepay.core.constants.CS;
@@ -73,6 +74,20 @@ public class MchInfoService extends ServiceImpl<MchInfoMapper, MchInfo> {
         if (!saveResult) {
             throw new BizException(ApiCodeEnum.SYS_OPERATION_FAIL_CREATE);
         }
+
+        String oldMchNo = mchInfo.getMchNo();
+        MchInfo saved = this.getById(oldMchNo);
+        if (saved == null || saved.getId() == null) {
+            throw new BizException("新增商户失败：未获取到ID");
+        }
+        String newMchNo = String.valueOf(saved.getId());
+        UpdateWrapper<MchInfo> uw = new UpdateWrapper<>();
+        uw.eq("id", saved.getId()).set("mch_no", newMchNo);
+        boolean pkUpdate = this.update(uw);
+        if (!pkUpdate) {
+            throw new BizException(ApiCodeEnum.SYS_OPERATION_FAIL_CREATE);
+        }
+        mchInfo.setMchNo(newMchNo);
 
         // 插入用户信息
         SysUser sysUser = new SysUser();
