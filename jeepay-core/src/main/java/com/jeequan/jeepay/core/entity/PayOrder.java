@@ -136,8 +136,8 @@ public class PayOrder extends BaseModel implements Serializable {
     /**
      * 产品名称
      */
-    @Schema(title = "productName", description = "产品名称")
-    private String productName;
+    @Schema(title = "channelName", description = "通道名称")
+    private String channelName;
 
     /**
      * 通道费率（百分比）

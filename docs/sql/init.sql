@@ -309,7 +309,7 @@ CREATE TABLE `t_pay_order` (
         `way_code` VARCHAR(20) NOT NULL COMMENT '支付方式代码',
         `amount` BIGINT(20) NOT NULL COMMENT '支付金额,单位分',
         `product_id` BIGINT(20) DEFAULT NULL COMMENT '产品ID',
-        `product_name` VARCHAR(64) DEFAULT NULL COMMENT '产品名称',
+        `channel_name` VARCHAR(64) DEFAULT NULL COMMENT '产品名称',
         `channel_fee_rate` decimal(20,6) DEFAULT NULL COMMENT '通道费率（百分比）',
         `mch_fee_rate` decimal(20,6) NOT NULL COMMENT '商户手续费费率快照',
         `mch_fee_amount` BIGINT(20) NOT NULL COMMENT '商户手续费,单位分',

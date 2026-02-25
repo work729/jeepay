@@ -15,7 +15,7 @@
         <result column="way_code" property="wayCode" />
         <result column="amount" property="amount" />
         <result column="product_id" property="productId" />
-        <result column="product_name" property="productName" />
+        <result column="channel_name" property="channelName" />
         <result column="channel_fee_rate" property="channelFeeRate" />
         <result column="mch_fee_rate" property="mchFeeRate" />
         <result column="mch_fee_amount" property="mchFeeAmount" />
@@ -135,7 +135,7 @@
     <select id="selectProductStatsPage" resultType="java.util.Map" parameterType="java.util.Map">
         SELECT
             t.product_id AS productId,
-            MAX(t.product_name) AS productName,
+            MAX(t.channel_name) AS channelName,
             ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
             SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS rechargeCount,
             COUNT(1) AS totalCount,
@@ -143,7 +143,7 @@
         FROM t_pay_order t
         WHERE 1=1
         <if test="param.productId != null and param.productId != ''"> AND t.product_id = #{param.productId} </if>
-        <if test="param.productName != null and param.productName != ''"> AND t.product_name LIKE CONCAT('%', #{param.productName}, '%') </if>
+        <if test="param.productName != null and param.productName != ''"> AND t.channel_name LIKE CONCAT('%', #{param.channelName}, '%') </if>
         <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
         <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
         GROUP BY t.product_id
