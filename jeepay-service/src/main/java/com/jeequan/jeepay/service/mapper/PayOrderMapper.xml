@@ -198,22 +198,22 @@
         ORDER BY rechargeAmount DESC
     </select>
 
-    <!-- 渠道详情（ifCode 下的 wayCode） -->
+    <!-- 渠道详情（ifCode 下的每个 channel_id） -->
     <select id="selectChannelDetailsByIfCode" resultType="java.util.Map" parameterType="java.util.Map">
         SELECT
-            t.way_code AS channelId,
-            w.way_name AS channelName,
+            t.channel_id AS channelId,
+            c.channel_name AS channelName,
+            c.if_code AS ifCode,
             ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS rechargeAmount,
-            ROUND(IFNULL(SUM(t.amount - IFNULL(t.mch_fee_amount,0) - IFNULL(t.refund_amount,0)),0)/100, 2) AS creditedAmount,
-            SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS rechargeCount,
-            COUNT(1) AS totalCount
+            COUNT(1) AS rechargeCount,
+            SUM(CASE WHEN t.state = 2 THEN 1 ELSE 0 END) AS successCount
         FROM t_pay_order t
-        LEFT JOIN t_pay_way w ON w.way_code = t.way_code
+        LEFT JOIN t_pay_channel c ON c.id = t.channel_id
         WHERE 1=1
         <if test="param.ifCode != null and param.ifCode != ''"> AND t.if_code = #{param.ifCode} </if>
         <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
         <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
-        GROUP BY t.way_code, w.way_name
+        GROUP BY t.channel_id, c.channel_name, c.if_code
         ORDER BY rechargeAmount DESC
     </select>
 
