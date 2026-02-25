@@ -153,46 +153,28 @@ public abstract class AbstractPayOrderController extends ApiController {
             IPaymentService paymentService = checkMchWayCodeAndGetService(mchAppConfigContext, routeConfig.getIfCode(), wayCode);
             String ifCode = paymentService.getIfCode();
 
-            // 合并扩展参数：写入产品ID/名称与通道费率及商户费率（百分比）
             Long routeProductId = routeConfig.getProductId();
             BigDecimal routeChannelRate = routeConfig.getChannelRate();
             BigDecimal routeMchRate = routeConfig.getMchRate();
-            String originExt = bizRQ.getExtParam();
-            JSONObject extObj = StringUtils.isNotBlank(originExt) ? JSONObject.parseObject(originExt) : JsonKit.newJson("_", "_");
-            extObj.put("productId", routeProductId);
-            PayProduct pp = routeProductId != null ? payProductService.getById(routeProductId) : null;
-            extObj.put("channelFeeRate", routeChannelRate);
-            extObj.put("mchFeeRate", routeMchRate);
-            extObj.put("channelName", routeConfig.getChannelName());
-            bizRQ.setExtParam(extObj.toJSONString());
 
             if(isNewOrder){
                 payOrder = genPayOrder(bizRQ, mchInfo, mchApp, ifCode, routeConfig.getMchRate());
                 // 设置产品信息与通道费率
                 payOrder.setProductId(routeProductId);
-                PayProduct ppNew = routeProductId != null ? payProductService.getById(routeProductId) : null;
-                payOrder.setChannelName(ppNew != null ? routeConfig.getChannelName() : null);
+                payOrder.setChannelName(routeConfig.getChannelName());
                 payOrder.setChannelFeeRate(routeChannelRate);
+                payOrder.setChannelIfCode(routeConfig.getIfCode());
+                payOrder.setChannelSign(routeConfig.getChannelSign());
             }else{
                 payOrder.setIfCode(ifCode);
                 payOrder.setMchFeeRate(routeConfig.getMchRate());
                 payOrder.setMchFeeAmount(AmountUtil.calPercentageFee(payOrder.getAmount(), payOrder.getMchFeeRate()));
                 // 更新产品信息与通道费率
                 payOrder.setProductId(routeProductId);
-                PayProduct ppUpd = routeProductId != null ? payProductService.getById(routeProductId) : null;
-                payOrder.setChannelName(ppUpd != null ? routeConfig.getChannelName() : null);
+                payOrder.setChannelName(routeConfig.getChannelName());
                 payOrder.setChannelFeeRate(routeChannelRate);
-                // 同步更新订单扩展参数，确保渠道请求收到最新扩展字段
-                String payOrderExt = payOrder.getExtParam();
-                JSONObject extUpd = StringUtils.isNotBlank(payOrderExt) ? JSONObject.parseObject(payOrderExt) : JsonKit.newJson("_", "_");
-                extUpd.put("productId", routeProductId);
-                PayProduct ppu = routeProductId != null ? payProductService.getById(routeProductId) : null;
-                extUpd.put("productName", ppu != null ? ppu.getProductName() : null);
-                extUpd.put("channelFeeRate", routeChannelRate);
-                extUpd.put("mchFeeRate", routeMchRate);
-                extUpd.put("channelName", routeConfig.getChannelName());
-                payOrder.setExtParam(extUpd.toJSONString());
-                bizRQ.setExtParam(payOrder.getExtParam());
+                payOrder.setChannelIfCode(routeConfig.getIfCode());
+                payOrder.setChannelSign(routeConfig.getChannelSign());
             }
 
             //预先校验
@@ -254,6 +236,7 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setMchName(mchInfo.getMchShortName()); //商户名称（简称）
         payOrder.setMchType(mchInfo.getType()); //商户类型
         payOrder.setMchOrderNo(rq.getMchOrderNo()); //商户订单号
+        payOrder.setAppId(mchApp.getAppId()); //商户应用appId
         payOrder.setIfCode(ifCode); //接口代码
         payOrder.setWayCode(rq.getWayCode()); //支付方式
         payOrder.setAmount(rq.getAmount()); //订单金额
@@ -476,7 +459,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 if(rate == null){
                     rate = BigDecimal.ZERO;
                 }
-                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate(), channel.getChannelName());
+                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign());
             }
         }
 
@@ -491,13 +474,15 @@ public abstract class AbstractPayOrderController extends ApiController {
         private final Long productId;
         private final BigDecimal channelRate;
         private final String channelName;
+        private final String channelSign;
 
-        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate, String channelName) {
+        RouteConfig(String ifCode, BigDecimal mchRate, Long productId, BigDecimal channelRate, String channelName, String channelSign) {
             this.ifCode = ifCode;
             this.mchRate = mchRate;
             this.productId = productId;
             this.channelRate = channelRate;
             this.channelName = channelName;
+            this.channelSign = channelSign;
         }
 
         public String getIfCode() {
@@ -518,6 +503,10 @@ public abstract class AbstractPayOrderController extends ApiController {
         
         public String getChannelName() {
             return channelName;
+        }
+        
+        public String getChannelSign() {
+            return channelSign;
         }
     }
 

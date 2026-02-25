@@ -16,6 +16,8 @@
         <result column="amount" property="amount" />
         <result column="product_id" property="productId" />
         <result column="channel_name" property="channelName" />
+        <result column="channel_if_code" property="channelIfDode" />
+        <result column="channel_sign" property="channelSign" />
         <result column="channel_fee_rate" property="channelFeeRate" />
         <result column="mch_fee_rate" property="mchFeeRate" />
         <result column="mch_fee_amount" property="mchFeeAmount" />

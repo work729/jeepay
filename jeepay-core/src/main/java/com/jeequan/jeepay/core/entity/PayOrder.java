@@ -140,6 +140,18 @@ public class PayOrder extends BaseModel implements Serializable {
     private String channelName;
 
     /**
+     * 通道编码
+     */
+    @Schema(title = "channelIfCode", description = "通道编码")
+    private String channelIfCode;
+
+    /**
+     * 通道标识
+     */
+    @Schema(title = "channelSign", description = "通道标识")
+    private String channelSign;
+
+    /**
      * 通道费率（百分比）
      */
     @Schema(title = "channelFeeRate", description = "通道费率（百分比）")
