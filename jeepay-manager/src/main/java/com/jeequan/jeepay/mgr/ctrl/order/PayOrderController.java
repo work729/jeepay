@@ -22,6 +22,7 @@ import com.jeequan.jeepay.JeepayClient;
 import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.constants.ApiCodeEnum;
 import com.jeequan.jeepay.core.entity.MchApp;
+import com.jeequan.jeepay.core.entity.AgentInfo;
 import com.jeequan.jeepay.core.entity.PayOrder;
 import com.jeequan.jeepay.core.entity.PayWay;
 import com.jeequan.jeepay.core.exception.BizException;
@@ -37,6 +38,7 @@ import com.jeequan.jeepay.service.impl.MchAppService;
 import com.jeequan.jeepay.service.impl.PayOrderService;
 import com.jeequan.jeepay.service.impl.PayWayService;
 import com.jeequan.jeepay.service.impl.SysConfigService;
+import com.jeequan.jeepay.service.impl.AgentInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -67,6 +69,7 @@ public class PayOrderController extends CommonCtrl {
     @Autowired private PayWayService payWayService;
     @Autowired private SysConfigService sysConfigService;
     @Autowired private MchAppService mchAppService;
+    @Autowired private AgentInfoService agentInfoService;
 
     /**
      * @author: pangxiaoyu
@@ -130,6 +133,12 @@ public class PayOrderController extends CommonCtrl {
         PayOrder payOrder = payOrderService.getById(payOrderId);
         if (payOrder == null) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_SELETE);
+        }
+        if (payOrder.getAgentId() != null) {
+            AgentInfo agent = agentInfoService.getById(payOrder.getAgentId());
+            if (agent != null) {
+                payOrder.addExt("agentName", agent.getAgentName());
+            }
         }
         return ApiRes.ok(payOrder);
     }
