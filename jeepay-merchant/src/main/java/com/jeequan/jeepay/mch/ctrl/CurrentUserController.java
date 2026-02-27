@@ -26,6 +26,8 @@ import com.jeequan.jeepay.core.entity.SysEntitlement;
 import com.jeequan.jeepay.core.entity.SysUser;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
+import com.jeequan.jeepay.core.utils.JeepayKit;
+import com.jeequan.jeepay.core.utils.TotpUtil;
 import com.jeequan.jeepay.core.model.security.JeeUserDetails;
 import com.jeequan.jeepay.core.utils.TreeDataBuilder;
 import com.jeequan.jeepay.service.impl.SysEntitlementService;
@@ -42,6 +44,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -141,6 +150,88 @@ public class CurrentUserController extends CommonCtrl{
 		return ApiRes.ok();
 	}
 
+	@Operation(summary = "谷歌验证-生成绑定二维码与密钥")
+	@Parameters({
+			@Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER)
+	})
+	@RequestMapping(value="/google/setup", method = RequestMethod.POST)
+	public ApiRes googleSetup() throws BizException {
+		JeeUserDetails current = getCurrentUser();
+		String secret = TotpUtil.generateSecret(20);
+		String issuer = "Jeepay";
+		String account = current.getSysUser().getLoginUsername();
+		String uri = TotpUtil.buildOtpauthUri(issuer, account, secret, 6, 30, "SHA1");
+		try {
+			QRCodeWriter writer = new QRCodeWriter();
+			BitMatrix matrix = writer.encode(uri, BarcodeFormat.QR_CODE, 240, 240);
+			BufferedImage image = MatrixToImageWriter.toBufferedImage(matrix);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(image, "png", baos);
+			String base64 = Base64.encode(baos.toByteArray());
+			JSONObject result = new JSONObject();
+			result.put("secret", secret);
+			result.put("otpauthUri", uri);
+			result.put("imageBase64Data", base64);
+			return ApiRes.ok(result);
+		} catch (Exception e) {
+			throw new BizException("二维码生成失败");
+		}
+	}
+
+	@Operation(summary = "谷歌验证-确认开启")
+	@Parameters({
+			@Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+			@Parameter(name = "secret", description = "Base32密钥", required = true),
+			@Parameter(name = "code", description = "6位验证码", required = true)
+	})
+	@RequestMapping(value="/google/enable", method = RequestMethod.POST)
+	@MethodLog(remark = "谷歌验证-开启")
+	public ApiRes googleEnable() throws BizException {
+		String secret = getValStringRequired("secret");
+		String code = getValStringRequired("code");
+		boolean ok = TotpUtil.verifyCode(secret, code, 6, 30, 1);
+		if (!ok) {
+			throw new BizException("验证码校验失败");
+		}
+		SysUser update = new SysUser();
+		update.setSysUserId(getCurrentUser().getSysUser().getSysUserId());
+		update.setGoogleAuthSecret(JeepayKit.aesEncode(secret));
+		update.setGoogleAuthEnabled((byte)1);
+		sysUserService.updateById(update);
+		JeeUserDetails cu = getCurrentUser();
+		cu.setSysUser(sysUserService.getById(cu.getSysUser().getSysUserId()));
+		ITokenService.refData(cu);
+		return ApiRes.ok();
+	}
+
+	@Operation(summary = "谷歌验证-关闭")
+	@Parameters({
+			@Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+			@Parameter(name = "code", description = "6位验证码", required = true)
+	})
+	@RequestMapping(value="/google/disable", method = RequestMethod.POST)
+	@MethodLog(remark = "谷歌验证-关闭")
+	public ApiRes googleDisable() throws BizException {
+		String code = getValStringRequired("code");
+		SysUser user = sysUserService.getById(getCurrentUser().getSysUser().getSysUserId());
+		if (user.getGoogleAuthEnabled() == null || user.getGoogleAuthEnabled() == 0 || user.getGoogleAuthSecret() == null) {
+			return ApiRes.ok();
+		}
+		String secret = JeepayKit.aesDecode(user.getGoogleAuthSecret());
+		boolean ok = TotpUtil.verifyCode(secret, code, 6, 30, 1);
+		if (!ok) {
+			throw new BizException("验证码校验失败");
+		}
+		SysUser update = new SysUser();
+		update.setSysUserId(user.getSysUserId());
+		update.setGoogleAuthEnabled((byte)0);
+		update.setGoogleAuthSecret(null);
+		sysUserService.updateById(update);
+		JeeUserDetails cu = getCurrentUser();
+		cu.setSysUser(sysUserService.getById(cu.getSysUser().getSysUserId()));
+		ITokenService.refData(cu);
+		return ApiRes.ok();
+	}
 
 	/** modifyPwd */
 	@Operation(summary = "修改个人信息--安全信息")
