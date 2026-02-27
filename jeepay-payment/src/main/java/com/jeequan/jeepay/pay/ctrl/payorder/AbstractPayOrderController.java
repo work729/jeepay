@@ -452,10 +452,10 @@ public abstract class AbstractPayOrderController extends ApiController {
         }
 
         for (PayChannel channel : channelList) {
-            String ifCode = channel.getIfCode();
+            String channelSign = channel.getChannelSign();
             IPaymentService paymentService;
             try {
-                paymentService = SpringBeansUtil.getBean(ifCode + "PaymentService", IPaymentService.class);
+                paymentService = SpringBeansUtil.getBean(channelSign + "PaymentService", IPaymentService.class);
             } catch (Exception e) {
                 continue;
             }
@@ -472,7 +472,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 if(rate == null){
                     rate = BigDecimal.ZERO;
                 }
-                return new RouteConfig(ifCode, rate, productId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign(), channel.getId());
+                return new RouteConfig(channelSign, rate, productId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign(), channel.getId());
             }
         }
 
