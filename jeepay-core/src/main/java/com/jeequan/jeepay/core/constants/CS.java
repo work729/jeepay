@@ -112,6 +112,13 @@ public class CS {
         return String.format(CACHE_KEY_IMG_CODE, imgToken);
     }
 
+    //google登录二次验证 缓存时间，单位：s
+    public static final int GOOGLE_LOGIN_CACHE_TIME = 180;
+    public static final String CACHE_KEY_GOOGLE_LOGIN = "google_login_%s";
+    public static String getCacheKeyGoogleLogin(String token){
+        return String.format(CACHE_KEY_GOOGLE_LOGIN, token);
+    }
+
     /** 回调URL的格前缀  */
     public static final String PAY_RETURNURL_FIX_ONLY_JUMP_PREFIX = "ONLYJUMP_";
 

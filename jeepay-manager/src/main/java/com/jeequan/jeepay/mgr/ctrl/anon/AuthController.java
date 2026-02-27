@@ -23,8 +23,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.jeequan.jeepay.core.aop.MethodLog;
 import com.jeequan.jeepay.core.cache.RedisUtil;
 import com.jeequan.jeepay.core.constants.CS;
+import com.jeequan.jeepay.core.entity.SysUser;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
+import com.jeequan.jeepay.core.model.security.JeeUserDetails;
 import com.jeequan.jeepay.mgr.ctrl.CommonCtrl;
 import com.jeequan.jeepay.mgr.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -73,8 +75,17 @@ public class AuthController extends CommonCtrl {
             throw new BizException("验证码有误！");
         }
 
-		// 返回前端 accessToken
-		String accessToken = authService.auth(account, ipassport);
+		JeeUserDetails details = authService.preAuth(account, ipassport);
+		if (details.getSysUser().getGoogleAuthEnabled() != null && details.getSysUser().getGoogleAuthEnabled() == CS.YES) {
+			String pendingToken = UUID.fastUUID().toString();
+			RedisUtil.set(CS.getCacheKeyGoogleLogin(pendingToken), details, CS.GOOGLE_LOGIN_CACHE_TIME);
+			RedisUtil.del(CS.getCacheKeyImgCode(vercodeToken));
+			JSONObject result = new JSONObject();
+			result.put("googleRequired", true);
+			result.put("pendingToken", pendingToken);
+			return ApiRes.ok(result);
+		}
+		String accessToken = authService.issueToken(details);
 
         // 删除图形验证码缓存数据
         RedisUtil.del(CS.getCacheKeyImgCode(vercodeToken));
@@ -103,4 +114,31 @@ public class AuthController extends CommonCtrl {
 		return ApiRes.ok(result);
 	}
 
+	@Operation(summary = "谷歌验证码二次校验后登录")
+	@Parameters({
+			@Parameter(name = "pt", description = "pendingToken", required = true),
+			@Parameter(name = "gc", description = "谷歌验证码，Base64", required = true)
+	})
+	@RequestMapping(value = "/google/validate", method = RequestMethod.POST)
+	@MethodLog(remark = "谷歌二次认证")
+	public ApiRes googleValidate() throws BizException {
+		String pendingToken = getValStringRequired("pt");
+		String googleCode = Base64.decodeStr(getValStringRequired("gc"));
+		JeeUserDetails details = RedisUtil.getObject(CS.getCacheKeyGoogleLogin(pendingToken), JeeUserDetails.class);
+		if (details == null) {
+			throw new BizException("会话已失效，请重新登录！");
+		}
+		SysUser user = details.getSysUser();
+		if (user.getGoogleAuthEnabled() == null || user.getGoogleAuthEnabled() != CS.YES || user.getGoogleAuthSecret() == null) {
+			throw new BizException("未开启谷歌验证！");
+		}
+		String secret = com.jeequan.jeepay.core.utils.JeepayKit.aesDecode(user.getGoogleAuthSecret());
+		boolean ok = com.jeequan.jeepay.core.utils.TotpUtil.verifyCode(secret, googleCode, 6, 30, 1);
+		if (!ok) {
+			throw new BizException("谷歌验证码有误！");
+		}
+		String accessToken = authService.issueToken(details);
+		RedisUtil.del(CS.getCacheKeyGoogleLogin(pendingToken));
+		return ApiRes.ok4newJson(CS.ACCESS_TOKEN_NAME, accessToken);
+	}
 }

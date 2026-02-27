@@ -116,6 +116,37 @@ public class AuthService {
         return JWTUtils.generateToken(new JWTPayload(jeeUserDetails), systemYmlConfig.getJwtSecret());
     }
 
+    public JeeUserDetails preAuth(String username, String password){
+        UsernamePasswordAuthenticationToken upToken = new UsernamePasswordAuthenticationToken(username, password);
+        Authentication authentication = null;
+        try {
+            authentication = authenticationManager.authenticate(upToken);
+        } catch (JeepayAuthenticationException jex) {
+            throw jex.getBizException() == null ? new BizException(jex.getMessage()) : jex.getBizException();
+        } catch (BadCredentialsException e) {
+            throw new BizException("用户名/密码错误！");
+        } catch (AuthenticationException e) {
+            log.error("AuthenticationException:", e);
+            throw new BizException("认证服务出现异常， 请重试或联系系统管理员！");
+        }
+        JeeUserDetails jeeUserDetails = (JeeUserDetails) authentication.getPrincipal();
+        SysUser sysUser = jeeUserDetails.getSysUser();
+        if(sysUser.getIsAdmin() != CS.YES && sysEntitlementMapper.userHasLeftMenu(sysUser.getSysUserId(), CS.SYS_TYPE.MGR) <= 0){
+            throw new BizException("当前用户未分配任何菜单权限，请联系管理员进行分配后再登录！");
+        }
+        return jeeUserDetails;
+    }
+
+    public String issueToken(JeeUserDetails jeeUserDetails){
+        SysUser sysUser = jeeUserDetails.getSysUser();
+        jeeUserDetails.setAuthorities(getUserAuthority(sysUser));
+        String cacheKey = CS.getCacheKeyToken(sysUser.getSysUserId(), IdUtil.fastUUID());
+        ITokenService.processTokenCache(jeeUserDetails, cacheKey);
+        UsernamePasswordAuthenticationToken authenticationRest = new UsernamePasswordAuthenticationToken(jeeUserDetails, null, jeeUserDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authenticationRest);
+        return JWTUtils.generateToken(new JWTPayload(jeeUserDetails), systemYmlConfig.getJwtSecret());
+    }
+
     /** 根据用户ID 更新缓存中的权限集合， 使得分配实时生效  **/
     public void refAuthentication(List<Long> sysUserIdList){
 
