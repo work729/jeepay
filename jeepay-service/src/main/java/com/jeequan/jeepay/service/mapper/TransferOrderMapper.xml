@@ -33,4 +33,17 @@
         <result column="updated_at" property="updatedAt" />
     </resultMap>
 
+    <!-- 每日按商户聚合下发金额 -->
+    <select id="selectDailyPayoutByMch" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.mch_no AS mchNo,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS payoutAmount
+        FROM t_transfer_order t
+        WHERE t.state = 2
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.mch_no
+        ORDER BY payoutAmount DESC
+    </select>
+
 </mapper>

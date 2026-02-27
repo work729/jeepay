@@ -582,6 +582,11 @@ insert into t_sys_entitlement values('ENT_PC', '支付配置', 'file-done', '', 
         insert into t_sys_entitlement values('ENT_PC_WAY_EDIT', '按钮：修改', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_WAY', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_PC_WAY_DEL', '按钮：删除', 'no-icon', '', '', 'PB', 0, 1,  'ENT_PC_WAY', '0', 'MGR', now(), now());*/
 
+insert into t_sys_entitlement values('ENT_ANALYSIS_RECONCILE', '对账管理', 'audit', '', 'RouteView', 'ML', 0, 1,  'ROOT', '40', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_ANALYSIS_RECONCILE_MCH', '商户对账', 'profile', '/analysis/reconcile/mch', 'AnalysisMchReconcilePage', 'ML', 0, 1,  'ENT_ANALYSIS_RECONCILE', '10', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_ANALYSIS_RECONCILE_MCH_LIST', '页面：商户日对账列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_RECONCILE_MCH', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_ANALYSIS_RECONCILE_MCH_VIEW', '按钮：查看产品对账详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_ANALYSIS_RECONCILE_MCH', '0', 'MGR', now(), now());
+
 -- 系统管理
 insert into t_sys_entitlement values('ENT_SYS_CONFIG', '系统管理', 'setting', '', 'RouteView', 'ML', 0, 1,  'ROOT', '200', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_UR', '用户角色管理', 'team', '', 'RouteView', 'ML', 0, 1,  'ENT_SYS_CONFIG', '10', 'MGR', now(), now());

@@ -217,4 +217,21 @@
         ORDER BY rechargeAmount DESC
     </select>
 
+    <!-- 商户当日产品维度统计 -->
+    <select id="selectProductStatsByMchForDay" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.product_id AS productId,
+            MAX(t.channel_name) AS productName,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS throughputAmount,
+            MAX(t.mch_fee_rate) AS feeRate,
+            ROUND(IFNULL(SUM(t.amount - IFNULL(t.mch_fee_amount,0) - IFNULL(t.refund_amount,0)),0)/100, 2) AS creditAmount
+        FROM t_pay_order t
+        WHERE 1=1
+        <if test="param.mchNo != null and param.mchNo != ''"> AND t.mch_no = #{param.mchNo} </if>
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.product_id
+        ORDER BY throughputAmount DESC
+    </select>
+
 </mapper>

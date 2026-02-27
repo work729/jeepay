@@ -406,6 +406,15 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         return payOrderMapper.selectChannelDetailsByIfCode(param);
     }
 
+    /** 商户当日产品维度统计 **/
+    public List<Map> productStatsByMchForDay(String mchNo, String createdStart, String createdEnd) {
+        Map param = new HashMap<>();
+        if (StrUtil.isNotBlank(mchNo)) { param.put("mchNo", mchNo); }
+        if (StrUtil.isNotBlank(createdStart)) { param.put("createTimeStart", createdStart); }
+        if (StrUtil.isNotBlank(createdEnd)) { param.put("createTimeEnd", createdEnd); }
+        return payOrderMapper.selectProductStatsByMchForDay(param);
+    }
+
     /** 生成首页交易统计数据类型 **/
     public List<Map> getReturnList(int daySpace, String createdStart, List<Map> payAndRefundOrderList) {
         List<Map> dayList = new ArrayList<>();

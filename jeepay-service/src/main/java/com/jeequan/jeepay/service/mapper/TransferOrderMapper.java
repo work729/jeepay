@@ -17,6 +17,8 @@ package com.jeequan.jeepay.service.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.jeequan.jeepay.core.entity.TransferOrder;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -28,4 +30,5 @@ import com.jeequan.jeepay.core.entity.TransferOrder;
  */
 public interface TransferOrderMapper extends BaseMapper<TransferOrder> {
 
+    List<Map> selectDailyPayoutByMch(Map param);
 }

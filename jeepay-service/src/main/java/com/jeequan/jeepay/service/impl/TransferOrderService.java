@@ -27,6 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -154,5 +157,13 @@ public class TransferOrderService extends ServiceImpl<TransferOrderMapper, Trans
         wrapper.orderByDesc(TransferOrder::getCreatedAt);
 
         return page(iPage, wrapper);
+    }
+
+    /** 每日按商户聚合下发金额 **/
+    public List<Map> dailyPayoutByMch(String createdStart, String createdEnd) {
+        Map param = new HashMap<>();
+        if (StringUtils.isNotEmpty(createdStart)) { param.put("createTimeStart", createdStart); }
+        if (StringUtils.isNotEmpty(createdEnd)) { param.put("createTimeEnd", createdEnd); }
+        return baseMapper.selectDailyPayoutByMch(param);
     }
 }
