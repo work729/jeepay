@@ -659,6 +659,8 @@ insert into t_sys_entitlement values('ENT_MCH_CENTER', '商户中心', 'team', '
         insert into t_sys_entitlement values('ENT_MCH_TRANSFER_CHANNEL_USER', '按钮：获取渠道用户', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_TRANSFER', '0', 'MCH', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_TRANSFER_DO', '按钮：发起转账', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_TRANSFER', '0', 'MCH', now(), now());
 
+    insert into t_sys_entitlement values('ENT_MCH_FINANCE', '资金流水', 'profile', '/mch/fund', 'MchFinancePage', 'ML', 0, 1,  'ENT_MCH_CENTER', '25', 'MCH', now(), now());
+        insert into t_sys_entitlement values('ENT_MCH_FINANCE_LIST', '页面：资金流水列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MCH', now(), now());
 -- 【商户系统】 订单管理
 insert into t_sys_entitlement values('ENT_ORDER', '订单中心', 'transaction', '', 'RouteView', 'ML', 0, 1,  'ROOT', '20', 'MCH', now(), now());
     insert into t_sys_entitlement values('ENT_PAY_ORDER', '订单管理', 'account-book', '/pay', 'PayOrderListPage', 'ML', 0, 1,  'ENT_ORDER', '10', 'MCH', now(), now());
