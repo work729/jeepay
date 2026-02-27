@@ -66,6 +66,17 @@ public class PayChannelController extends CommonCtrl {
         return ApiRes.ok(payChannelService.getById(channelSign));
     }
 
+    @Operation(summary = "支付通道--详情（按ID）")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "id", description = "主键ID", required = true)
+    })
+    @PreAuthorize("hasAnyAuthority('ENT_PC_IF_DEFINE_VIEW', 'ENT_PC_IF_DEFINE_EDIT')")
+    @GetMapping("/id/{id}")
+    public ApiRes<PayChannel> detailById(@PathVariable("id") Long id) {
+        return ApiRes.ok(payChannelService.getOne(PayChannel.gw().eq(PayChannel::getId, id)));
+    }
+
     @Operation(summary = "支付通道--新增")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER)
@@ -94,6 +105,23 @@ public class PayChannelController extends CommonCtrl {
         PayChannel payChannel = getObject(PayChannel.class);
         payChannel.setChannelSign(channelSign);
         boolean result = payChannelService.updateById(payChannel);
+        if (!result) {
+            return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_UPDATE);
+        }
+        return ApiRes.ok();
+    }
+
+    @Operation(summary = "支付通道--更新（按ID）")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "id", description = "主键ID", required = true)
+    })
+    @PreAuthorize("hasAuthority('ENT_PC_IF_DEFINE_EDIT')")
+    @PutMapping("/id/{id}")
+    @MethodLog(remark = "更新支付通道")
+    public ApiRes updateById(@PathVariable("id") Long id) {
+        PayChannel payChannel = getObject(PayChannel.class);
+        boolean result = payChannelService.update(payChannel, PayChannel.gw().eq(PayChannel::getId, id));
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_UPDATE);
         }
