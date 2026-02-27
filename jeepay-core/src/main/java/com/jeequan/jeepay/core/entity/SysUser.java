@@ -128,5 +128,10 @@ public class SysUser extends BaseModel {
     @Schema(title = "updatedAt", description = "更新时间")
     private Date updatedAt;
 
+    @Schema(title = "googleAuthSecret", description = "谷歌验证密钥（加密存储）")
+    private String googleAuthSecret;
+
+    @Schema(title = "googleAuthEnabled", description = "谷歌验证开启标识 0-否 1-是")
+    private Byte googleAuthEnabled;
 
 }

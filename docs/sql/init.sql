@@ -65,6 +65,8 @@ CREATE TABLE `t_sys_user` (
     `state` TINYINT(6) NOT NULL DEFAULT 0 COMMENT '状态 0-停用 1-启用',
     `sys_type` VARCHAR(8) NOT NULL COMMENT '所属系统： MGR-运营平台, MCH-商户中心',
     `belong_info_id` VARCHAR(64) NOT NULL DEFAULT '0' COMMENT '所属商户ID / 0(平台)',
+    `google_auth_secret` VARCHAR(128) COMMENT '谷歌验证密钥（加密存储）',
+    `google_auth_enabled` TINYINT(6) NOT NULL DEFAULT 0 COMMENT '谷歌验证开启标识 0-否 1-是',
 	`created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
     `updated_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
 	PRIMARY KEY (`sys_user_id`),

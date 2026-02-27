@@ -16,6 +16,8 @@
         <result column="belong_info_id" property="belongInfoId" />
         <result column="created_at" property="createdAt" />
         <result column="updated_at" property="updatedAt" />
+        <result column="google_auth_secret" property="googleAuthSecret" />
+        <result column="google_auth_enabled" property="googleAuthEnabled" />
     </resultMap>
 
 </mapper>
