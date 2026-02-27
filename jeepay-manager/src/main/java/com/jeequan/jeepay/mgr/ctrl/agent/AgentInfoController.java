@@ -106,11 +106,7 @@ public class AgentInfoController extends CommonCtrl {
     @MethodLog(remark = "删除代理商")
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public ApiRes delete(@PathVariable("id") Long id) {
-        boolean result = agentInfoService.removeById(id);
-        if (!result) {
-            return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_DELETE);
-        }
-        return ApiRes.ok();
+        return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_DELETE);
     }
 
     @Operation(summary = "更新代理商信息", description = "")
@@ -152,4 +148,3 @@ public class AgentInfoController extends CommonCtrl {
         return ApiRes.ok(agentInfo);
     }
 }
-

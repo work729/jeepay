@@ -165,14 +165,7 @@ public class MchInfoController extends CommonCtrl {
     @MethodLog(remark = "删除商户")
     @RequestMapping(value="/{mchNo}", method = RequestMethod.DELETE)
     public ApiRes delete(@PathVariable("mchNo") String mchNo) {
-        List<Long> userIdList = mchInfoService.removeByMchNo(mchNo);
-
-        // 推送mq删除redis用户缓存
-        mqSender.send(CleanMchLoginAuthCacheMQ.build(userIdList));
-
-        // 推送mq到目前节点进行更新数据
-        mqSender.send(ResetIsvMchAppInfoConfigMQ.build(ResetIsvMchAppInfoConfigMQ.RESET_TYPE_MCH_INFO, null, mchNo, null));
-        return ApiRes.ok();
+        return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_DELETE);
     }
 
     /**

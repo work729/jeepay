@@ -504,7 +504,7 @@ insert into t_sys_entitlement values('ENT_MCH', '商户管理', 'shop', '', 'Rou
     insert into t_sys_entitlement values('ENT_MCH_FINANCE', '资金流水', 'profile', '/mch/fund', 'MchFinancePage', 'ML', 0, 1,  'ENT_MCH', '15', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_FINANCE_LIST', '页面：资金流水列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_FINANCE_VIEW', '按钮：详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_FINANCE', '0', 'MGR', now(), now());
-    insert into t_sys_entitlement values('ENT_MCH_ACCOUNT', '商户账户', 'profile', '/mch/account', 'MchAccountPage', 'ML', 0, 1,  'ENT_MCH', '16', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_MCH_ACCOUNT', '商户账户', 'profile', '/mch/account', 'MchAccountPage', 'ML', 0, 1,  'ENT_MCH', '9', 'MGR', now(), now());
         insert into t_sys_entitlement values('ENT_MCH_ACCOUNT_LIST', '页面：商户账户列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_MCH_ACCOUNT', '0', 'MGR', now(), now());
 
     -- 应用管理
