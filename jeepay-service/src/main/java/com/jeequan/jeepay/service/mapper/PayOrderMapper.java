@@ -59,6 +59,9 @@ public interface PayOrderMapper extends BaseMapper<PayOrder> {
     /** 渠道详情（按 ifCode 下的 wayCode） **/
     List<Map> selectChannelDetailsByIfCode(@Param("param") Map param);
 
+    /** 渠道对账详情（按 ifCode 下的 channel_id，含跑量、费率、入账） **/
+    List<Map> selectChannelReconcileDetailsByIfCode(@Param("param") Map param);
+
     /** 商户当日产品维度统计 **/
     List<Map> selectProductStatsByMchForDay(@Param("param") Map param);
 }

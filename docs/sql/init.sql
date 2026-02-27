@@ -584,8 +584,11 @@ insert into t_sys_entitlement values('ENT_PC', '支付配置', 'file-done', '', 
 
 insert into t_sys_entitlement values('ENT_RECONCILE', '对账管理', 'audit', '', 'RouteView', 'ML', 0, 1,  'ROOT', '60', 'MGR', now(), now());
     insert into t_sys_entitlement values('ENT_RECONCILE_MCH', '商户对账', 'profile', '/reconcile/mch', 'MchReconcilePage', 'ML', 0, 1,  'ENT_RECONCILE', '10', 'MGR', now(), now());
-    insert into t_sys_entitlement values('ENT_RECONCILE_MCH_LIST', '页面：商户日对账列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_RECONCILE_MCH', '0', 'MGR', now(), now());
-    insert into t_sys_entitlement values('ENT_RECONCILE_MCH_VIEW', '按钮：查看产品对账详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_RECONCILE_MCH', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_RECONCILE_MCH_LIST', '页面：商户日对账列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_RECONCILE_MCH', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_RECONCILE_MCH_VIEW', '按钮：查看产品对账详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_RECONCILE_MCH', '0', 'MGR', now(), now());
+    insert into t_sys_entitlement values('ENT_RECONCILE_CHANNEL', '渠道对账', 'profile', '/reconcile/channel', 'ChannelReconcilePage', 'ML', 0, 1,  'ENT_RECONCILE', '20', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_RECONCILE_CHANNEL_LIST', '页面：渠道日对账列表', 'no-icon', '', '', 'PB', 0, 1,  'ENT_RECONCILE_CHANNEL', '0', 'MGR', now(), now());
+        insert into t_sys_entitlement values('ENT_RECONCILE_CHANNEL_VIEW', '按钮：查看通道详情', 'no-icon', '', '', 'PB', 0, 1,  'ENT_RECONCILE_CHANNEL', '0', 'MGR', now(), now());
 
 -- 系统管理
 insert into t_sys_entitlement values('ENT_SYS_CONFIG', '系统管理', 'setting', '', 'RouteView', 'ML', 0, 1,  'ROOT', '200', 'MGR', now(), now());

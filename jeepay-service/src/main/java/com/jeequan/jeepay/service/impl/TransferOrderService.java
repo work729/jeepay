@@ -166,4 +166,12 @@ public class TransferOrderService extends ServiceImpl<TransferOrderMapper, Trans
         if (StringUtils.isNotEmpty(createdEnd)) { param.put("createTimeEnd", createdEnd); }
         return baseMapper.selectDailyPayoutByMch(param);
     }
+
+    /** 每日按渠道类型(if_code)聚合下发金额 **/
+    public List<Map> dailyPayoutByIfCode(String createdStart, String createdEnd) {
+        Map param = new HashMap<>();
+        if (StringUtils.isNotEmpty(createdStart)) { param.put("createTimeStart", createdStart); }
+        if (StringUtils.isNotEmpty(createdEnd)) { param.put("createTimeEnd", createdEnd); }
+        return baseMapper.selectDailyPayoutByIfCode(param);
+    }
 }

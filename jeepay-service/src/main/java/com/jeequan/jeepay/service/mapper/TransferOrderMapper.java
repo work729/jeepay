@@ -31,4 +31,5 @@ import java.util.Map;
 public interface TransferOrderMapper extends BaseMapper<TransferOrder> {
 
     List<Map> selectDailyPayoutByMch(Map param);
+    List<Map> selectDailyPayoutByIfCode(Map param);
 }

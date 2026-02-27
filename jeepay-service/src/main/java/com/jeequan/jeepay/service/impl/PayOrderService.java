@@ -406,6 +406,15 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         return payOrderMapper.selectChannelDetailsByIfCode(param);
     }
 
+    /** 渠道对账详情（按 ifCode 下的 channel_id，含跑量、费率、入账） **/
+    public List<Map> channelReconcileDetailsByIfCode(String ifCode, String createdStart, String createdEnd) {
+        Map param = new HashMap<>();
+        if (StrUtil.isNotBlank(ifCode)) { param.put("ifCode", ifCode); }
+        if (StrUtil.isNotBlank(createdStart)) { param.put("createTimeStart", createdStart); }
+        if (StrUtil.isNotBlank(createdEnd)) { param.put("createTimeEnd", createdEnd); }
+        return payOrderMapper.selectChannelReconcileDetailsByIfCode(param);
+    }
+
     /** 商户当日产品维度统计 **/
     public List<Map> productStatsByMchForDay(String mchNo, String createdStart, String createdEnd) {
         Map param = new HashMap<>();

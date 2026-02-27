@@ -46,4 +46,17 @@
         ORDER BY payoutAmount DESC
     </select>
 
+    <!-- 每日按渠道类型(if_code)聚合下发金额 -->
+    <select id="selectDailyPayoutByIfCode" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            t.if_code AS ifCode,
+            ROUND(IFNULL(SUM(t.amount),0)/100, 2) AS payoutAmount
+        FROM t_transfer_order t
+        WHERE t.state = 2
+        <if test="param.createTimeStart != null and param.createTimeStart != ''"> AND t.created_at &gt;= #{param.createTimeStart} </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''"> AND t.created_at &lt;= #{param.createTimeEnd} </if>
+        GROUP BY t.if_code
+        ORDER BY payoutAmount DESC
+    </select>
+
 </mapper>
