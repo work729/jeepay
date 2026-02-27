@@ -34,7 +34,7 @@ public class MchReconcileController extends CommonCtrl {
             @Parameter(name = "pageSize", description = "分页条数"),
             @Parameter(name = "date", description = "统计日期(yyyy-MM-dd)")
     })
-    @PreAuthorize("hasAuthority('ENT_ANALYSIS_RECONCILE_MCH_LIST')")
+    @PreAuthorize("hasAuthority('ENT_RECONCILE_MCH_LIST')")
     @GetMapping("")
     public ApiPageRes<Map> list() {
         String date = getValString("date");
@@ -70,7 +70,7 @@ public class MchReconcileController extends CommonCtrl {
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "date", description = "统计日期(yyyy-MM-dd)")
     })
-    @PreAuthorize("hasAuthority('ENT_ANALYSIS_RECONCILE_MCH_VIEW')")
+    @PreAuthorize("hasAuthority('ENT_MCH_VIEW')")
     @GetMapping("/{mchNo}/products")
     public ApiRes<List<Map>> productStats(@PathVariable("mchNo") String mchNo) {
         String date = getValString("date");
