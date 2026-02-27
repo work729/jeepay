@@ -139,6 +139,24 @@ public class MchInfo extends BaseModel implements Serializable {
     @Schema(title = "telegramContact", description = "电报联系方式")
     private String telegramContact;
 
+    @Schema(title = "loginSecurityType", description = "登录安全类型: 0-仅密码, 1-密码+谷歌")
+    private Byte loginSecurityType;
+
+    @Schema(title = "paySecurityType", description = "支付安全类型: 0-无需验证, 1-仅支付密码, 2-仅谷歌")
+    private Byte paySecurityType;
+
+    @Schema(title = "loginIpWhitelist", description = "登录IP白名单，逗号分隔")
+    private String loginIpWhitelist;
+
+    @Schema(title = "loginIpBlacklist", description = "登录IP黑名单，逗号分隔")
+    private String loginIpBlacklist;
+
+    @Schema(title = "payIpWhitelist", description = "支付IP白名单，逗号分隔")
+    private String payIpWhitelist;
+
+    @Schema(title = "payIpBlacklist", description = "支付IP黑名单，逗号分隔")
+    private String payIpBlacklist;
+
     /**
      * 初始用户ID（创建商户时，允许商户登录的用户）
      */

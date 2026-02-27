@@ -261,6 +261,7 @@ public class MchInfoController extends CommonCtrl {
         SysUser sysUser = sysUserService.getById(mchInfo.getInitUserId());
         if (sysUser != null) {
             mchInfo.addExt("loginUserName", sysUser.getLoginUsername());
+            mchInfo.addExt("googleBound", (sysUser.getGoogleAuthEnabled() != null && sysUser.getGoogleAuthEnabled() == CS.YES));
         }
         return ApiRes.ok(mchInfo);
     }
