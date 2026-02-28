@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -222,6 +223,12 @@ public class MchInfoController extends CommonCtrl {
 
             //删除超管登录信息
             removeCacheUserIdList.add(mchAdminUserId);
+        }
+
+        String payPassword = getReqParamJSON().getString("payPassword");
+        if (StringUtils.isNotBlank(payPassword)) {
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            mchInfo.setPayPassword(encoder.encode(payPassword));
         }
 
         // 推送mq删除redis用户认证信息

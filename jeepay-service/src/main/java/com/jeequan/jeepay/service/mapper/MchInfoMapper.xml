@@ -12,6 +12,9 @@
         <result column="contact_name" property="contactName" />
         <result column="contact_tel" property="contactTel" />
         <result column="contact_email" property="contactEmail" />
+        <result column="telegram_group" property="telegramGroup" />
+        <result column="telegram_contact" property="telegramContact" />
+        <result column="pay_password" property="payPassword" />
         <result column="state" property="state" />
         <result column="remark" property="remark" />
         <result column="login_security_type" property="loginSecurityType" />

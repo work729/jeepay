@@ -139,6 +139,9 @@ public class MchInfo extends BaseModel implements Serializable {
     @Schema(title = "telegramContact", description = "电报联系方式")
     private String telegramContact;
 
+    @Schema(title = "payPassword", description = "支付密码哈希")
+    private String payPassword;
+
     @Schema(title = "loginSecurityType", description = "登录安全类型: 0-仅密码, 1-密码+谷歌")
     private Byte loginSecurityType;
 

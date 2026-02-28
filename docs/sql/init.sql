@@ -147,6 +147,7 @@ CREATE TABLE `t_mch_info` (
         `contact_email` VARCHAR(32) COMMENT '联系人邮箱',
         `state` TINYINT(6) NOT NULL DEFAULT 1 COMMENT '商户状态: 0-停用, 1-正常',
         `remark` VARCHAR(128) COMMENT '商户备注',
+        `pay_password` VARCHAR(100) COMMENT '支付密码哈希',
         `login_security_type` TINYINT(6) NOT NULL DEFAULT 0 COMMENT '登录安全类型: 0-仅密码, 1-密码+谷歌',
         `pay_security_type` TINYINT(6) NOT NULL DEFAULT 0 COMMENT '支付安全类型: 0-无需验证, 1-仅支付密码, 2-仅谷歌',
         `login_ip_whitelist` TEXT COMMENT '登录IP白名单，逗号分隔',

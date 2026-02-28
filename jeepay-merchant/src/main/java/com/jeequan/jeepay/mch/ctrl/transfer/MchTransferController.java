@@ -23,6 +23,9 @@ import com.jeequan.jeepay.core.entity.PayInterfaceConfig;
 import com.jeequan.jeepay.core.entity.PayInterfaceDefine;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.model.ApiRes;
+import com.jeequan.jeepay.core.entity.MchInfo;
+import com.jeequan.jeepay.core.entity.SysUser;
+import com.jeequan.jeepay.core.utils.SpringBeansUtil;
 import com.jeequan.jeepay.core.model.DBApplicationConfig;
 import com.jeequan.jeepay.core.utils.JeepayKit;
 import com.jeequan.jeepay.core.utils.StringKit;
@@ -155,6 +158,45 @@ public class MchTransferController extends CommonCtrl {
         handleParamAmount("amount");
         TransferOrderCreateReqModel model = getObject(TransferOrderCreateReqModel.class);
 
+        String currentIp = getIp();
+        MchInfo mchInfoPolicy = SpringBeansUtil.getBean(com.jeequan.jeepay.service.impl.MchInfoService.class).getById(this.getCurrentMchNo());
+        if (mchInfoPolicy != null) {
+            String wl = mchInfoPolicy.getPayIpWhitelist();
+            String bl = mchInfoPolicy.getPayIpBlacklist();
+            if (wl != null && !wl.isEmpty() && !matchIp(currentIp, wl)) {
+                throw new BizException("当前IP未在支付白名单内");
+            }
+            if (bl != null && !bl.isEmpty() && matchIp(currentIp, bl)) {
+                throw new BizException("当前IP已在支付黑名单内");
+            }
+            if (mchInfoPolicy.getPaySecurityType() != null) {
+                if (mchInfoPolicy.getPaySecurityType() == 2) {
+                    String gaCode = getValString("gaCode");
+                    if (gaCode == null) {
+                        throw new BizException("请先输入谷歌验证码");
+                    }
+                    SysUser user = getCurrentUser().getSysUser();
+                    if (user.getGoogleAuthEnabled() == null || user.getGoogleAuthEnabled() != CS.YES || user.getGoogleAuthSecret() == null) {
+                        throw new BizException("未绑定谷歌验证码，请先在个人中心绑定");
+                    }
+                    String secret = com.jeequan.jeepay.core.utils.JeepayKit.aesDecode(user.getGoogleAuthSecret());
+                    if (!com.jeequan.jeepay.core.utils.TotpUtil.verifyCode(secret, gaCode, 6, 30, 1)) {
+                        throw new BizException("谷歌验证码有误");
+                    }
+                } else if (mchInfoPolicy.getPaySecurityType() == 1) {
+                    String payPwd = getValString("payPwd");
+                    if (payPwd == null) {
+                        throw new BizException("请先输入支付密码");
+                    }
+                    String encoded = mchInfoPolicy.getPayPassword();
+                    org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder enc = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+                    if (encoded == null || !enc.matches(payPwd, encoded)) {
+                        throw new BizException("支付密码有误");
+                    }
+                }
+            }
+        }
+
         MchApp mchApp = mchAppService.getById(model.getAppId());
         if(mchApp == null || mchApp.getState() != CS.PUB_USABLE || !mchApp.getMchNo().equals(getCurrentMchNo()) ){
             throw new BizException("商户应用不存在或不可用");
@@ -181,4 +223,13 @@ public class MchTransferController extends CommonCtrl {
         }
     }
 
+    private boolean matchIp(String ip, String list) {
+        String[] arr = list.split(",");
+        for (String s : arr) {
+            if (ip.equals(s.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

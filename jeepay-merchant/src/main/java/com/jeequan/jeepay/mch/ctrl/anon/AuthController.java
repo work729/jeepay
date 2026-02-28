@@ -29,6 +29,8 @@ import com.jeequan.jeepay.core.model.ApiRes;
 import com.jeequan.jeepay.core.model.security.JeeUserDetails;
 import com.jeequan.jeepay.mch.ctrl.CommonCtrl;
 import com.jeequan.jeepay.mch.service.AuthService;
+import com.jeequan.jeepay.core.entity.MchInfo;
+import com.jeequan.jeepay.service.impl.MchInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -52,6 +54,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController extends CommonCtrl {
 
 	@Autowired private AuthService authService;
+	@Autowired private MchInfoService mchInfoService;
 
 	/** 用户信息认证 获取iToken  **/
 	@Operation(summary = "登录认证")
@@ -76,7 +79,26 @@ public class AuthController extends CommonCtrl {
         }
 
 		JeeUserDetails details = authService.preAuth(account, ipassport);
-		if (details.getSysUser().getGoogleAuthEnabled() != null && details.getSysUser().getGoogleAuthEnabled() == CS.YES) {
+		MchInfo mchInfo = mchInfoService.getById(details.getSysUser().getBelongInfoId());
+		if (mchInfo != null) {
+			String ip = getIp();
+			if (mchInfo.getLoginIpWhitelist() != null && !mchInfo.getLoginIpWhitelist().isEmpty()) {
+				if (!matchIp(ip, mchInfo.getLoginIpWhitelist())) {
+					throw new BizException("当前IP未在登录白名单内");
+				}
+			}
+			if (mchInfo.getLoginIpBlacklist() != null && !mchInfo.getLoginIpBlacklist().isEmpty()) {
+				if (matchIp(ip, mchInfo.getLoginIpBlacklist())) {
+					throw new BizException("当前IP已在登录黑名单内");
+				}
+			}
+		}
+		boolean needGoogle = (details.getSysUser().getGoogleAuthEnabled() != null && details.getSysUser().getGoogleAuthEnabled() == CS.YES)
+				|| (mchInfo != null && mchInfo.getLoginSecurityType() != null && mchInfo.getLoginSecurityType() == 1);
+		if (needGoogle) {
+			if (details.getSysUser().getGoogleAuthEnabled() == null || details.getSysUser().getGoogleAuthEnabled() != CS.YES) {
+				throw new BizException("当前商户要求谷歌验证，请先在个人中心绑定谷歌验证");
+			}
 			String pendingToken = UUID.fastUUID().toString();
 			RedisUtil.set(CS.getCacheKeyGoogleLogin(pendingToken), details, CS.GOOGLE_LOGIN_CACHE_TIME);
 			RedisUtil.del(CS.getCacheKeyImgCode(vercodeToken));
@@ -140,6 +162,16 @@ public class AuthController extends CommonCtrl {
 		String accessToken = authService.issueToken(details);
 		RedisUtil.del(CS.getCacheKeyGoogleLogin(pendingToken));
 		return ApiRes.ok4newJson(CS.ACCESS_TOKEN_NAME, accessToken);
+	}
+
+	private boolean matchIp(String ip, String list) {
+		String[] arr = list.split(",");
+		for (String s : arr) {
+			if (ip.equals(s.trim())) {
+				return true;
+			}
+		}
+		return false;
 	}
 	/** 根据商户号生成登录token（运营平台单点登录使用） **/
 	@Operation(summary = "根据商户号生成登录token（运营平台单点登录使用）")
