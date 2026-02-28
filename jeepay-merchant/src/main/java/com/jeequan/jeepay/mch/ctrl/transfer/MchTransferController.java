@@ -170,7 +170,7 @@ public class MchTransferController extends CommonCtrl {
                 throw new BizException("当前IP已在支付黑名单内");
             }
             if (mchInfoPolicy.getPaySecurityType() != null) {
-                if (mchInfoPolicy.getPaySecurityType() == 2) {
+                if (mchInfoPolicy.getPaySecurityType() == 2 || mchInfoPolicy.getPaySecurityType() == 3) {
                     String gaCode = getValString("gaCode");
                     if (gaCode == null) {
                         throw new BizException("请先输入谷歌验证码");
@@ -183,7 +183,8 @@ public class MchTransferController extends CommonCtrl {
                     if (!com.jeequan.jeepay.core.utils.TotpUtil.verifyCode(secret, gaCode, 6, 30, 1)) {
                         throw new BizException("谷歌验证码有误");
                     }
-                } else if (mchInfoPolicy.getPaySecurityType() == 1) {
+                }
+                if (mchInfoPolicy.getPaySecurityType() == 1 || mchInfoPolicy.getPaySecurityType() == 3) {
                     String payPwd = getValString("payPwd");
                     if (payPwd == null) {
                         throw new BizException("请先输入支付密码");
