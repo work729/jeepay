@@ -645,6 +645,7 @@ insert into t_sys_entitlement values('ENT_MCH_MAIN', '主页', 'home', '/main', 
 
 -- 【商户系统】 商户中心
 insert into t_sys_entitlement values('ENT_MCH_CENTER', '商户中心', 'team', '', 'RouteView', 'ML', 0, 1, 'ROOT', '10', 'MCH', now(), now());
+    insert into t_sys_entitlement values('ENT_MCH_BASIC_INFO', '基本信息', 'idcard', '/mch/basic-info', 'MchBasicInfo', 'ML', 0, 1,  'ENT_MCH_CENTER', '10', 'MCH', now(), now());
     insert into t_sys_entitlement values ('ENT_MCH_PAY_PRODUCT_LIST', '支付通道', 'apartment', '/payProducts', 'MchPayProductPage', 'ML', 0, 1, 'ENT_MCH_CENTER', '40', 'MCH', now(), now());
     insert into t_sys_entitlement values('ENT_SECURITY_CENTER', '安全中心', 'property-safety', '/security', 'SecurityCenter', 'ML', 0, 1,  'ENT_MCH_CENTER', '50', 'MCH', now(), now());
     /*insert into t_sys_entitlement values('ENT_MCH_APP', '应用管理', 'appstore', '/apps', 'MchAppPage', 'ML', 0, 1,  'ENT_MCH_CENTER', '10', 'MCH', now(), now());
