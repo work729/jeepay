@@ -63,7 +63,8 @@ public class QueryOrderController extends ApiController {
         }
 
         QueryPayOrderRS bizRes = QueryPayOrderRS.buildByPayOrder(payOrder);
-        return ApiRes.okWithSign(bizRes, configContextQueryService.queryMchApp(rq.getMchNo(), rq.getAppId()).getAppSecret());
+        String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+        return ApiRes.okWithSign(bizRes, secret);
     }
 
 }

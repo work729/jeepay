@@ -133,7 +133,8 @@ public class TransferOrderController extends ApiController {
             }
 
             TransferOrderRS bizRes = TransferOrderRS.buildByRecord(transferOrder);
-            return ApiRes.okWithSign(bizRes, mchApp.getAppSecret());
+            String secret = configContextQueryService.getMchInfoContext(mchNo).getMchInfo().getMchSecret();
+            return ApiRes.okWithSign(bizRes, secret);
 
         }  catch (BizException e) {
             return ApiRes.customFail(e.getMessage());
@@ -148,7 +149,8 @@ public class TransferOrderController extends ApiController {
             }
 
             TransferOrderRS bizRes = TransferOrderRS.buildByRecord(transferOrder);
-            return ApiRes.okWithSign(bizRes, configContextQueryService.queryMchApp(bizRQ.getMchNo(), bizRQ.getAppId()).getAppSecret());
+            String secret = configContextQueryService.getMchInfoContext(bizRQ.getMchNo()).getMchInfo().getMchSecret();
+            return ApiRes.okWithSign(bizRes, secret);
 
         } catch (Exception e) {
             log.error("系统异常：{}", e);

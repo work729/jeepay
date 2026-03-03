@@ -389,7 +389,12 @@ public abstract class AbstractPayOrderController extends ApiController {
         if(app == null){
             return ApiRes.ok(bizRS);
         }
-        return ApiRes.okWithSign(bizRS, app.getAppSecret());
+        String mchSecret = null;
+        MchAppConfigContext ctx = configContextQueryService.queryMchInfoAndAppInfo(bizRQ.getMchNo(), bizRQ.getAppId());
+        if(ctx != null && ctx.getMchInfo() != null && StringUtils.isNotBlank(ctx.getMchInfo().getMchSecret())){
+            mchSecret = ctx.getMchInfo().getMchSecret();
+        }
+        return ApiRes.okWithSign(bizRS, mchSecret);
     }
 
 

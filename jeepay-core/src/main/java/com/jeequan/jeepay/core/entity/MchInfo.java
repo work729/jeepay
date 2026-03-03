@@ -122,6 +122,10 @@ public class MchInfo extends BaseModel implements Serializable {
     @Schema(title = "remark", description = "商户备注")
     private String remark;
 
+    @Schema(title = "mchSecret", description = "商户密钥")
+    @TableField("mch_secret")
+    private String mchSecret;
+
     @Schema(title = "accountBalance", description = "商户账户余额,单位分")
     @TableField("account_balance")
     private Long accountBalance;

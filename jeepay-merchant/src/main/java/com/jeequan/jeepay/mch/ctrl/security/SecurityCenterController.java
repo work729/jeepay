@@ -54,12 +54,13 @@ public class SecurityCenterController extends CommonCtrl {
         data.put("googleBound", user.getGoogleAuthEnabled() != null && user.getGoogleAuthEnabled() == CS.YES);
         List<JSONObject> apps = new ArrayList<>();
         List<MchApp> list = mchAppService.list(MchApp.gw().eq(MchApp::getMchNo, mchNo));
+        boolean secretSet = mchInfo != null && StringUtils.isNotBlank(mchInfo.getMchSecret());
         for (MchApp app : list) {
             JSONObject o = new JSONObject();
             o.put("appId", app.getAppId());
             o.put("appName", app.getAppName());
             o.put("state", app.getState());
-            o.put("secretSet", StringUtils.isNotBlank(app.getAppSecret()));
+            o.put("secretSet", secretSet);
             apps.add(o);
         }
         data.put("apps", apps);
@@ -134,12 +135,14 @@ public class SecurityCenterController extends CommonCtrl {
         String mchNo = getCurrentMchNo();
         List<MchApp> list = mchAppService.list(MchApp.gw().eq(MchApp::getMchNo, mchNo));
         List<JSONObject> apps = new ArrayList<>();
+        MchInfo mchInfo = mchInfoService.getById(mchNo);
+        boolean secretSet = mchInfo != null && StringUtils.isNotBlank(mchInfo.getMchSecret());
         for (MchApp app : list) {
             JSONObject o = new JSONObject();
             o.put("appId", app.getAppId());
             o.put("appName", app.getAppName());
             o.put("state", app.getState());
-            o.put("secretSet", StringUtils.isNotBlank(app.getAppSecret()));
+            o.put("secretSet", secretSet);
             apps.add(o);
         }
         return ApiRes.ok(apps);
@@ -157,7 +160,8 @@ public class SecurityCenterController extends CommonCtrl {
         if (app == null || !getCurrentMchNo().equals(app.getMchNo())) {
             throw new BizException("应用不存在");
         }
-        return ApiRes.ok4newJson("appSecret", app.getAppSecret());
+        MchInfo mchInfo = mchInfoService.getById(getCurrentMchNo());
+        return ApiRes.ok4newJson("appSecret", mchInfo == null ? null : mchInfo.getMchSecret());
     }
 
     @Operation(summary = "生成应用密钥（首次设置）")
@@ -176,10 +180,10 @@ public class SecurityCenterController extends CommonCtrl {
             throw new BizException("已设置密钥，无需生成");
         }
         String newSecret = UUID.randomUUID().toString().replace("-", "");
-        MchApp update = new MchApp();
-        update.setAppId(appId);
-        update.setAppSecret(newSecret);
-        mchAppService.updateById(update);
+        MchInfo update = new MchInfo();
+        update.setMchNo(getCurrentMchNo());
+        update.setMchSecret(newSecret);
+        mchInfoService.updateById(update);
         return ApiRes.ok4newJson("appSecret", newSecret);
     }
 
@@ -207,10 +211,10 @@ public class SecurityCenterController extends CommonCtrl {
             throw new BizException("谷歌验证码有误");
         }
         String newSecret = UUID.randomUUID().toString().replace("-", "");
-        MchApp update = new MchApp();
-        update.setAppId(appId);
-        update.setAppSecret(newSecret);
-        mchAppService.updateById(update);
+        MchInfo update = new MchInfo();
+        update.setMchNo(getCurrentMchNo());
+        update.setMchSecret(newSecret);
+        mchInfoService.updateById(update);
         return ApiRes.ok4newJson("appSecret", newSecret);
     }
 }

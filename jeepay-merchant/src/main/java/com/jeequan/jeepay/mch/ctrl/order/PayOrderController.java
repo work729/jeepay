@@ -192,7 +192,12 @@ public class PayOrderController extends CommonCtrl {
 
         MchApp mchApp = mchAppService.getById(payOrder.getAppId());
 
-        JeepayClient jeepayClient = new JeepayClient(sysConfigService.getDBApplicationConfig().getPaySiteUrl(), mchApp.getAppSecret());
+        String mchSecret = null;
+        com.jeequan.jeepay.core.entity.MchInfo mchInfo = com.jeequan.jeepay.core.utils.SpringBeansUtil.getBean(com.jeequan.jeepay.service.impl.MchInfoService.class).getById(payOrder.getMchNo());
+        if(mchInfo != null && mchInfo.getMchSecret() != null && !mchInfo.getMchSecret().trim().isEmpty()){
+            mchSecret = mchInfo.getMchSecret();
+        }
+        JeepayClient jeepayClient = new JeepayClient(sysConfigService.getDBApplicationConfig().getPaySiteUrl(), mchSecret);
 
         try {
             RefundOrderCreateResponse response = jeepayClient.execute(request);

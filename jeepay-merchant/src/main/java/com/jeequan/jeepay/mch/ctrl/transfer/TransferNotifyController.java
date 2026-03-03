@@ -67,7 +67,12 @@ public class TransferNotifyController extends CommonCtrl {
         }
 
         params.remove("sign");
-        if(!JeepayKit.getSign(params, mchApp.getAppSecret()).equalsIgnoreCase(sign)){
+        String mchSecret = null;
+        com.jeequan.jeepay.core.entity.MchInfo mchInfo = com.jeequan.jeepay.core.utils.SpringBeansUtil.getBean(com.jeequan.jeepay.service.impl.MchInfoService.class).getById(mchNo);
+        if(mchInfo != null && mchInfo.getMchSecret() != null && !mchInfo.getMchSecret().trim().isEmpty()){
+            mchSecret = mchInfo.getMchSecret();
+        }
+        if(!JeepayKit.getSign(params, mchSecret).equalsIgnoreCase(sign)){
             response.getWriter().print("sign fail");
             return;
         }

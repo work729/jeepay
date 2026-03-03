@@ -101,8 +101,10 @@ public abstract class ApiController extends AbstractCtrl {
                 throw new BizException("参数appId与商户号不匹配");
             }
 
-            // 验签
-            String appSecret = mchApp.getAppSecret();
+            // 验签：优先使用商户级密钥，其次回退到应用密钥
+            String appSecret = (mchAppConfigContext.getMchInfo() != null && org.apache.commons.lang3.StringUtils.isNotBlank(mchAppConfigContext.getMchInfo().getMchSecret()))
+                    ? mchAppConfigContext.getMchInfo().getMchSecret()
+                    : "";
 
             // 转换为 JSON
             JSONObject bizReqJSON = (JSONObject)JSONObject.toJSON(bizRQ);

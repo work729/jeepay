@@ -127,7 +127,12 @@ public class MchTransferController extends CommonCtrl {
 
         param.put("redirectUrl", dbApplicationConfig.getMchSiteUrl() + "/api/anon/channelUserIdCallback");
 
-        param.put("sign", JeepayKit.getSign(param, mchApp.getAppSecret()));
+        String mchSecret = null;
+        MchInfo currentMchInfo = SpringBeansUtil.getBean(com.jeequan.jeepay.service.impl.MchInfoService.class).getById(getCurrentMchNo());
+        if(currentMchInfo != null && currentMchInfo.getMchSecret() != null && !currentMchInfo.getMchSecret().trim().isEmpty()){
+            mchSecret = currentMchInfo.getMchSecret();
+        }
+        param.put("sign", JeepayKit.getSign(param, mchSecret));
         String url = StringKit.appendUrlQuery(dbApplicationConfig.getPaySiteUrl() + "/api/channelUserId/jump", param);
 
         return ApiRes.ok(url);
@@ -211,7 +216,12 @@ public class MchTransferController extends CommonCtrl {
         model.setNotifyUrl(dbApplicationConfig.getMchSiteUrl() + "/api/anon/transferNotify/transferOrder"); //回调地址
         request.setBizModel(model);
 
-        JeepayClient jeepayClient = new JeepayClient(sysConfigService.getDBApplicationConfig().getPaySiteUrl(), mchApp.getAppSecret());
+        String mchSecret2 = null;
+        MchInfo currentMchInfo2 = SpringBeansUtil.getBean(com.jeequan.jeepay.service.impl.MchInfoService.class).getById(getCurrentMchNo());
+        if(currentMchInfo2 != null && currentMchInfo2.getMchSecret() != null && !currentMchInfo2.getMchSecret().trim().isEmpty()){
+            mchSecret2 = currentMchInfo2.getMchSecret();
+        }
+        JeepayClient jeepayClient = new JeepayClient(sysConfigService.getDBApplicationConfig().getPaySiteUrl(), mchSecret2);
 
         try {
             TransferOrderCreateResponse response = jeepayClient.execute(request);

@@ -78,7 +78,8 @@ public class UnifiedOrderController extends AbstractPayOrderController {
         if(rq.getAppId() == null || rq.getAppId().trim().isEmpty()){
             return ApiRes.ok(res);
         }
-        return ApiRes.okWithSign(res, configContextQueryService.queryMchApp(rq.getMchNo(), rq.getAppId()).getAppSecret());
+        String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+        return ApiRes.okWithSign(res, secret);
     }
 
 

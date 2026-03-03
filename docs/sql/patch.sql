@@ -258,6 +258,10 @@ insert into t_sys_entitlement values('ENT_ANALYSIS', '数据分析', 'area-chart
 
 ## -- ++++ [v1.12.0] ===> [v1.13.0] ++++
 DELETE FROM t_pay_interface_define WHERE if_code = 'wxpay';
+
+## -- ++++ [mch_secret] ===> [introduce merchant-level secret] ++++
+-- 为商户信息表增加商户密钥字段，用于替代原 t_mch_app.app_secret
+ALTER TABLE `t_mch_info` ADD COLUMN `mch_secret` VARCHAR(128) DEFAULT NULL COMMENT '商户密钥' AFTER `remark`;
 INSERT INTO t_pay_interface_define (if_code, if_name, config_page_type, normal_mch_params, way_codes, icon, bg_color, state, remark)
 VALUES ('wxpay', '微信支付官方', 2,
         '[{"name":"mchId", "desc":"微信支付商户号", "type": "text","verify":"required"},{"name":"appId","desc":"应用App ID","type":"text","verify":"required"},{"name":"appSecret","desc":"应用AppSecret","type":"text","verify":"required","star":"1"},{"name":"oauth2Url", "desc":"oauth2地址（置空将使用官方）", "type": "text"},{"name":"apiVersion", "desc":"微信支付API版本", "type": "radio","values":"V2,V3","titles":"V2,V3","verify":"required"},{"name":"key", "desc":"APIv2密钥", "type": "textarea","verify":"required","star":"1"},{"name":"apiV3Key", "desc":"APIv3密钥（V3接口必填）", "type": "textarea","verify":"","star":"1"},{"name":"serialNo", "desc":"序列号（V3接口必填）", "type": "textarea","verify":"","star":"1" },{"name":"cert", "desc":"API证书(apiclient_cert.p12)", "type": "file","verify":""},{"name":"apiClientCert", "desc":"证书文件(apiclient_cert.pem) ", "type": "file","verify":""},{"name":"apiClientKey", "desc":"私钥文件(apiclient_key.pem)", "type": "file","verify":""}]',

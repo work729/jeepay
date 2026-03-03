@@ -67,9 +67,11 @@ public class PayMchNotifyService {
                 return ;
             }
 
-            //商户app私钥（appId 为空时不签名）
-            String appSecret = StringUtils.isBlank(dbPayOrder.getAppId()) ? null
-                    : configContextQueryService.queryMchApp(dbPayOrder.getMchNo(), dbPayOrder.getAppId()).getAppSecret();
+            //商户密钥（优先商户级，其次应用级；appId 为空时不签名）
+            String appSecret = null;
+            if(StringUtils.isNotBlank(dbPayOrder.getMchNo())){
+                appSecret = configContextQueryService.getMchInfoContext(dbPayOrder.getMchNo()).getMchInfo().getMchSecret();
+            }
 
             // 封装通知url
             String notifyUrl = createNotifyUrl(dbPayOrder, appSecret);
@@ -119,9 +121,11 @@ public class PayMchNotifyService {
                 return ;
             }
 
-            //商户app私钥（appId 为空时不签名）
-            String appSecret = StringUtils.isBlank(dbRefundOrder.getAppId()) ? null
-                    : configContextQueryService.queryMchApp(dbRefundOrder.getMchNo(), dbRefundOrder.getAppId()).getAppSecret();
+            //商户密钥（优先商户级，其次应用级；appId 为空时不签名）
+            String appSecret = null;
+            if(StringUtils.isNotBlank(dbRefundOrder.getMchNo())){
+                appSecret = configContextQueryService.getMchInfoContext(dbRefundOrder.getMchNo()).getMchInfo().getMchSecret();
+            }
 
             // 封装通知url
             String notifyUrl = createNotifyUrl(dbRefundOrder, appSecret);
@@ -171,9 +175,11 @@ public class PayMchNotifyService {
                 return ;
             }
 
-            //商户app私钥（appId 为空时不签名）
-            String appSecret = StringUtils.isBlank(dbTransferOrder.getAppId()) ? null
-                    : configContextQueryService.queryMchApp(dbTransferOrder.getMchNo(), dbTransferOrder.getAppId()).getAppSecret();
+            //商户密钥（优先商户级，其次应用级；appId 为空时不签名）
+            String appSecret = null;
+            if(StringUtils.isNotBlank(dbTransferOrder.getMchNo())){
+                appSecret = configContextQueryService.getMchInfoContext(dbTransferOrder.getMchNo()).getMchInfo().getMchSecret();
+            }
 
             // 封装通知url
             String notifyUrl = createNotifyUrl(dbTransferOrder, appSecret);
