@@ -64,6 +64,7 @@ public class SecurityCenterController extends CommonCtrl {
             apps.add(o);
         }
         data.put("apps", apps);
+        data.put("mchSecretSet", mchInfo != null && StringUtils.isNotBlank(mchInfo.getMchSecret()));
         return ApiRes.ok(data);
     }
 
@@ -151,15 +152,10 @@ public class SecurityCenterController extends CommonCtrl {
     @Operation(summary = "查看应用密钥")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "appId", description = "应用ID", required = true)
+            @Parameter(name = "appId", description = "应用ID")
     })
     @PostMapping("/app/secret/view")
     public ApiRes viewSecret() {
-        String appId = getValStringRequired("appId");
-        MchApp app = mchAppService.getById(appId);
-        if (app == null || !getCurrentMchNo().equals(app.getMchNo())) {
-            throw new BizException("应用不存在");
-        }
         MchInfo mchInfo = mchInfoService.getById(getCurrentMchNo());
         return ApiRes.ok4newJson("appSecret", mchInfo == null ? null : mchInfo.getMchSecret());
     }
@@ -167,17 +163,13 @@ public class SecurityCenterController extends CommonCtrl {
     @Operation(summary = "生成应用密钥（首次设置）")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "appId", description = "应用ID", required = true)
+            @Parameter(name = "appId", description = "应用ID")
     })
     @PostMapping("/app/secret/generate")
     public ApiRes generateSecret() {
-        String appId = getValStringRequired("appId");
-        MchApp app = mchAppService.getById(appId);
-        if (app == null || !getCurrentMchNo().equals(app.getMchNo())) {
-            throw new BizException("应用不存在");
-        }
-        if (StringUtils.isNotBlank(app.getAppSecret())) {
-            throw new BizException("已设置密钥，无需生成");
+        MchInfo mchInfo = mchInfoService.getById(getCurrentMchNo());
+        if (mchInfo != null && StringUtils.isNotBlank(mchInfo.getMchSecret())) {
+            //throw new BizException("已设置密钥，无需生成");
         }
         String newSecret = UUID.randomUUID().toString().replace("-", "");
         MchInfo update = new MchInfo();
@@ -187,30 +179,29 @@ public class SecurityCenterController extends CommonCtrl {
         return ApiRes.ok4newJson("appSecret", newSecret);
     }
 
-    @Operation(summary = "重置应用密钥（需谷歌验证码）")
+    @Operation(summary = "重置应用密钥（若未绑定谷歌可直接保存）")
     @Parameters({
             @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "appId", description = "应用ID", required = true),
-            @Parameter(name = "gaCode", description = "谷歌验证码", required = true)
+            @Parameter(name = "appId", description = "应用ID"),
+            @Parameter(name = "gaCode", description = "谷歌验证码")
     })
     @PostMapping("/app/secret/rotate")
     public ApiRes rotateSecret() {
-        String appId = getValStringRequired("appId");
-        String gaCode = getValStringRequired("gaCode");
-        MchApp app = mchAppService.getById(appId);
-        if (app == null || !getCurrentMchNo().equals(app.getMchNo())) {
-            throw new BizException("应用不存在");
-        }
+        String gaCode = getValString("gaCode");
+        String inputSecret = getValString("mchSecret");
         SysUser user = sysUserService.getById(getCurrentUser().getSysUser().getSysUserId());
-        if (user.getGoogleAuthEnabled() == null || user.getGoogleAuthEnabled() != CS.YES || user.getGoogleAuthSecret() == null) {
-            throw new BizException("未绑定谷歌验证，请先在个人中心绑定");
+        boolean googleBound = user.getGoogleAuthEnabled() != null && user.getGoogleAuthEnabled() == CS.YES && user.getGoogleAuthSecret() != null;
+        if (googleBound) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(gaCode)) {
+                throw new BizException("请输入谷歌验证码");
+            }
+            String secret = JeepayKit.aesDecode(user.getGoogleAuthSecret());
+            boolean ok = TotpUtil.verifyCode(secret, gaCode, 6, 30, 1);
+            if (!ok) {
+                throw new BizException("谷歌验证码有误");
+            }
         }
-        String secret = JeepayKit.aesDecode(user.getGoogleAuthSecret());
-        boolean ok = TotpUtil.verifyCode(secret, gaCode, 6, 30, 1);
-        if (!ok) {
-            throw new BizException("谷歌验证码有误");
-        }
-        String newSecret = UUID.randomUUID().toString().replace("-", "");
+        String newSecret = StringUtils.isNotBlank(inputSecret) ? inputSecret : UUID.randomUUID().toString().replace("-", "");
         MchInfo update = new MchInfo();
         update.setMchNo(getCurrentMchNo());
         update.setMchSecret(newSecret);
