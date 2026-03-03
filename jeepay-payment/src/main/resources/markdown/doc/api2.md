@@ -18,49 +18,30 @@
 
 字段名 | 变量名 | 必填 | 类型 | 示例值 | 描述
 ------- | -------| -------| -------| -------| -------
-商户号 | mchNo | 是 | String(30) | M1621873433953 | 商户号   
-应用ID | appId | 是 | String(24) | 60cc09bce4b0f1c0b83761c9 | 应用ID
+商户ID | mchId | 是 | long | 20001222 | 分配的商户号   
+支付产品ID | productId | 是 | int | 8000 | 支付产品ID
 商户订单号 | mchOrderNo | 是 | String(30) | 20160427210604000490 | 商户生成的订单号  
-支付方式 | wayCode | 是 | String(30) | WX_LITE | 支付方式,如微信小程序WX_LITE
 支付金额 | amount | 是 | int | 100 | 支付金额,单位分  
-货币代码 | currency | 是 | String(3) | cny | 三位货币代码,人民币:cny  
-客户端IP | clientIp | 否 | String(32) | 210.73.10.148 | 客户端IPV4地址  
-商品标题 | subject | 是 | String(64) | Jeepay商品标题测试 | 商品标题  
-商品描述 | body | 是 | String(256) | Jeepay商品描述测试 | 商品描述  
-异步通知地址 | notifyUrl | 否 | String(128) | https://www.jeequan.com/notify.htm | 支付结果异步回调URL,只有传了该值才会发起回调  
-跳转通知地址 | returnUrl | 否 | String(128) | https://www.jeequan.com/return.htm | 支付结果同步跳转通知URL
-失效时间 | expiredTime | 否 | int | 3600 | 订单失效时间,单位秒,默认2小时.订单在(创建时间+失效时间)后失效   
-渠道参数 | channelExtra | 否 | String(256 | {"auth_code", "13920933111042"} | 特定渠道发起的额外参数,json格式字符串.详见渠道参数说明  
-分账模式 | divisionMode | 否 | int | 0 | 分账模式： 0-该笔订单不允许分账[默认], 1-支付成功按配置自动完成分账, 2-商户手动分账(解冻商户金额)  
-扩展参数 | extParam | 否 | String(512) | 134586944573118714 | 商户扩展参数,回调时会原样返回  
-请求时间 | reqTime | 是 | long | 1622016572190 | 请求接口时间,13位时间戳   
-接口版本 | version | 是 | String(3) | 1.0 | 接口版本号，固定：1.0  
+支付结果后台回调URL | notifyUrl | 是 | String(128) | https://www.jeequan.com/notify.htm | 支付结果回调URL  
+支付结果前端跳转URL | returnUrl | 否 | String(128) | https://www.jeequan.com/return.htm | 支付结果回调URL
+透传参数 | param2 | 否 | String(128) | 透传参数 | 回调原样返回  
 签名 | sign | 是 | String(32) | C380BEC2BFD727A4B6845133519F3AD6 | 签名值，详见签名算法  
-签名类型 | signType | 是 | String(32) | MD5 | 签名类型，目前只支持MD5方式  
+签名类型 | signType | 否 | String(32) | MD5 | 如不传默认按MD5处理  
 
 
 `请求示例数据`
 
 ```json
 {
-  "amount": 8,
-  "extParam": "",
-  "mchOrderNo": "mho1624005107281",
-  "subject": "商品标题",
-  "wayCode": "ALI_BAR",
-  "sign": "84F606FA25A6EC4783BECC08D4FDC681",
-  "reqTime": "1624005107",
-  "body": "商品描述",
-  "version": "1.0",
-  "channelExtra": "{\"authCode\":\"280812820366966512\"}",
-  "appId": "60cc09bce4b0f1c0b83761c9",
-  "clientIp": "192.166.1.132",
-  "notifyUrl": "https://www.jeequan.com",
+  "mchId": 20001222,
+  "productId": 8000,
+  "mchOrderNo": "20160427210604000490",
+  "amount": 100,
+  "notifyUrl": "https://www.jeequan.com/notify.htm",
+  "returnUrl": "https://www.jeequan.com/return.htm",
+  "param2": "custom-pass-through",
   "signType": "MD5",
-  "currency": "cny",
-  "returnUrl": "",
-  "mchNo": "M1623984572",
-  "divisionMode": 1
+  "sign": "C380BEC2BFD727A4B6845133519F3AD6"
 }
 ```
 

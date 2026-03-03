@@ -106,7 +106,7 @@ public abstract class AbstractPayOrderController extends ApiController {
 
                 payOrder.setWayCode(wayCode); // 需要将订单更新 支付方式
                 payOrder.setChannelUser(bizRQ.getChannelUserId()); //更新渠道用户信息
-                bizRQ.setMchNo(payOrder.getMchNo());
+                bizRQ.setMchId(payOrder.getMchNo());
                 bizRQ.setAppId(payOrder.getAppId());
                 bizRQ.setMchOrderNo(payOrder.getMchOrderNo());
                 bizRQ.setWayCode(wayCode);
@@ -120,7 +120,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 bizRQ.setExtParam(payOrder.getExtParam());
             }
 
-            String mchNo = bizRQ.getMchNo();
+            String mchNo = bizRQ.getMchId();
             String appId = bizRQ.getAppId();
 
             // 只有新订单模式，进行校验
@@ -385,12 +385,12 @@ public abstract class AbstractPayOrderController extends ApiController {
             bizRS.setErrMsg(bizRS.getChannelRetMsg() != null ? bizRS.getChannelRetMsg().getChannelErrMsg() : null);
         }
 
-        MchApp app = StringUtils.isBlank(bizRQ.getAppId()) ? null : configContextQueryService.queryMchApp(bizRQ.getMchNo(), bizRQ.getAppId());
+        MchApp app = StringUtils.isBlank(bizRQ.getAppId()) ? null : configContextQueryService.queryMchApp(bizRQ.getAppId(), bizRQ.getAppId());
         if(app == null){
             return ApiRes.ok(bizRS);
         }
         String mchSecret = null;
-        MchAppConfigContext ctx = configContextQueryService.queryMchInfoAndAppInfo(bizRQ.getMchNo(), bizRQ.getAppId());
+        MchAppConfigContext ctx = configContextQueryService.queryMchInfoAndAppInfo(bizRQ.getAppId(), bizRQ.getAppId());
         if(ctx != null && ctx.getMchInfo() != null && StringUtils.isNotBlank(ctx.getMchInfo().getMchSecret())){
             mchSecret = ctx.getMchInfo().getMchSecret();
         }

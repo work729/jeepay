@@ -15,7 +15,9 @@
  */
 package com.jeequan.jeepay.pay.ctrl.payorder;
 
+import com.alibaba.fastjson.JSONObject;
 import com.jeequan.jeepay.core.constants.CS;
+import com.jeequan.jeepay.core.entity.MchInfo;
 import com.jeequan.jeepay.core.entity.PayOrder;
 import com.jeequan.jeepay.core.entity.PayWay;
 import com.jeequan.jeepay.core.exception.BizException;
@@ -25,6 +27,7 @@ import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRQ;
 import com.jeequan.jeepay.pay.rqrs.payorder.UnifiedOrderRS;
 import com.jeequan.jeepay.pay.rqrs.payorder.payway.AutoBarOrderRQ;
 import com.jeequan.jeepay.pay.service.ConfigContextQueryService;
+import com.jeequan.jeepay.service.impl.MchInfoService;
 import com.jeequan.jeepay.service.impl.PayWayService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -45,12 +48,56 @@ public class UnifiedOrderController extends AbstractPayOrderController {
 
     @Autowired private PayWayService payWayService;
     @Autowired private ConfigContextQueryService configContextQueryService;
+    @Autowired private MchInfoService mchInfoService;
 
     /**
      * 统一下单接口
      * **/
     @PostMapping("/api/pay/unifiedOrder")
     public ApiRes unifiedOrder(){
+
+        // 兼容新入参字段：mchId/productId/param2/sign（默认MD5）等
+        JSONObject params = getReqParamJSON();
+        if(params.containsKey("mchId") && !params.containsKey("mchNo")){
+            Object mchIdVal = params.get("mchId");
+            if(mchIdVal != null){
+                try{
+                    Long mchIdL = (mchIdVal instanceof Number) ? ((Number)mchIdVal).longValue() : Long.parseLong(String.valueOf(mchIdVal));
+                    MchInfo info = mchInfoService.getOne(MchInfo.gw().eq(MchInfo::getId, mchIdL));
+                    if(info != null && info.getMchNo() != null){
+                        params.put("mchNo", info.getMchNo());
+                    }
+                }catch (Exception ignore){
+                }
+            }
+        }
+        if(!params.containsKey("signType")){
+            params.put("signType", "MD5");
+        }
+        if(!params.containsKey("extParam")){
+            JSONObject ext = new JSONObject();
+            if(params.containsKey("param2")){
+                ext.put("param2", params.getString("param2"));
+            }
+            if(params.containsKey("productId")){
+                ext.put("productId", params.get("productId"));
+            }
+            if(!ext.isEmpty()){
+                params.put("extParam", ext.toJSONString());
+            }
+        }
+        if(!params.containsKey("currency")){
+            params.put("currency", "CNY");
+        }
+        if(!params.containsKey("subject") && params.containsKey("mchOrderNo")){
+            params.put("subject", params.getString("mchOrderNo"));
+        }
+        if(!params.containsKey("body") && params.containsKey("subject")){
+            params.put("body", params.getString("subject"));
+        }
+        if(!params.containsKey("wayCode")){
+            params.put("wayCode", CS.PAY_WAY_CODE.QR_CASHIER);
+        }
 
         //获取参数 & 验签
         UnifiedOrderRQ rq = getRQByWithMchSign(UnifiedOrderRQ.class);
@@ -78,7 +125,7 @@ public class UnifiedOrderController extends AbstractPayOrderController {
         if(rq.getAppId() == null || rq.getAppId().trim().isEmpty()){
             return ApiRes.ok(res);
         }
-        String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+        String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
         return ApiRes.okWithSign(res, secret);
     }
 

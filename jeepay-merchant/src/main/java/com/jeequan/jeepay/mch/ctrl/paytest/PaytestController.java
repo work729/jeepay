@@ -134,21 +134,8 @@ public class PaytestController extends CommonCtrl {
     @PostMapping("/payOrders")
     public ApiRes doPay() {
 
-        //获取请求参数
+        // 参数校验尽量最小化，参数由前端补全并按统一下单规范传入
         Long productId = getValLong("productId");
-        Long amount = getRequiredAmountL("amount");
-        String mchOrderNo = getValStringRequired("mchOrderNo");
-        String wayCode = getValStringRequired("wayCode");
-
-        String orderTitle = getValStringRequired("orderTitle");
-
-        if(StringUtils.isEmpty(orderTitle)){
-            throw new BizException("订单标题不能为空");
-        }
-
-        // 前端明确了支付参数的类型 payDataType
-        String payDataType = getValString("payDataType");
-        String authCode = getValString("authCode");
 
 
         if (productId != null) {
@@ -167,7 +154,6 @@ public class PaytestController extends CommonCtrl {
                 throw new BizException("支付产品不存在或不可用");
             }
         }
-
         if (productId != null) {
             List<PayProductChannel> relations = payProductChannelService.list(
                     PayProductChannel.gw().eq(PayProductChannel::getProductId, productId)
@@ -190,33 +176,11 @@ public class PaytestController extends CommonCtrl {
             }
         }
 
-        // 改为直连支付网关统一下单接口（不再使用应用ID/SDK）
+        // 直接转发由前端补全的参数到支付网关统一下单接口（后端不再补全任何字段）
         DBApplicationConfig dbApplicationConfig = sysConfigService.getDBApplicationConfig();
         String payApi = dbApplicationConfig.getPaySiteUrl() + "/api/pay/unifiedOrder";
 
-        JSONObject body = new JSONObject();
-        body.put("mchNo", getCurrentMchNo());
-        body.put("mchOrderNo", mchOrderNo);
-        body.put("wayCode", wayCode);
-        body.put("amount", amount);
-        body.put("currency", wayCode.equalsIgnoreCase("pp_pc") ? "USD" : "CNY");
-        body.put("clientIp", getClientIp());
-        body.put("subject", orderTitle + "[" + getCurrentMchNo() + "商户联调]");
-        body.put("body", orderTitle + "[" + getCurrentMchNo() + "商户联调]");
-        body.put("notifyUrl", dbApplicationConfig.getMchSiteUrl() + "/api/anon/paytestNotify/payOrder");
-        // 可选返回地址
-        String returnUrl = getValString("returnUrl");
-        if(StringUtils.isNotBlank(returnUrl)){
-            body.put("returnUrl", returnUrl);
-        }
-        // 扩展参数
-        JSONObject extParams = new JSONObject();
-        if(StringUtils.isNotEmpty(payDataType)) { extParams.put("payDataType", payDataType.trim()); }
-        if(StringUtils.isNotEmpty(authCode)) { extParams.put("authCode", authCode.trim()); }
-        if(!extParams.isEmpty()){ body.put("channelExtra", extParams.toString()); }
-        // 验签占位（服务端在无 appId 情况下不做验签，但要求存在 signType 与 sign 字段）
-        body.put("signType", "MD5");
-        body.put("sign", "IGNORE");
+        JSONObject body = getReqParamJSON();
 
         org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
         try{
@@ -231,6 +195,22 @@ public class PaytestController extends CommonCtrl {
         }catch (Exception e){
             throw new BizException(e.getMessage());
         }
+    }
+
+    /** 获取当前商户ID（long） **/
+    @Operation(summary = "获取当前商户ID")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER)
+    })
+    @PreAuthorize("hasAuthority('ENT_MCH_PAY_TEST_PAYWAY_LIST')")
+    @GetMapping("/mchid")
+    public ApiRes mchId() {
+        String mchNo = getCurrentMchNo();
+        MchInfo mchInfo = mchInfoService.getById(mchNo);
+        if (mchInfo == null || mchInfo.getId() == null) {
+            throw new BizException("商户信息不存在");
+        }
+        return ApiRes.ok4newJson("mchId", mchInfo.getId());
     }
 
 }

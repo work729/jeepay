@@ -62,7 +62,7 @@ public abstract class ApiController extends AbstractCtrl {
         AbstractMchAppRQ abstractMchAppRQ = (AbstractMchAppRQ)bizRQ;
 
         //业务校验， 包括： 验签， 商户状态是否可用， 是否支持该支付方式下单等。
-        String mchNo = abstractMchAppRQ.getMchNo();
+        String mchNo = abstractMchAppRQ.getMchId();
         String appId = abstractMchAppRQ.getAppId();
         String sign = bizRQ.getSign();
         String signType = bizRQ.getSignType();
