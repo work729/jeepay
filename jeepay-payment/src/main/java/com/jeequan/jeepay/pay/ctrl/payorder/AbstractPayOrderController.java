@@ -104,20 +104,14 @@ public abstract class AbstractPayOrderController extends ApiController {
                     throw new BizException("订单状态异常");
                 }
 
-                payOrder.setWayCode(wayCode); // 需要将订单更新 支付方式
                 payOrder.setChannelUser(bizRQ.getChannelUserId()); //更新渠道用户信息
                 bizRQ.setMchId(payOrder.getMchNo());
                 bizRQ.setAppId(payOrder.getAppId());
                 bizRQ.setMchOrderNo(payOrder.getMchOrderNo());
-                bizRQ.setWayCode(wayCode);
                 bizRQ.setAmount(payOrder.getAmount());
-                bizRQ.setCurrency(payOrder.getCurrency());
                 bizRQ.setClientIp(payOrder.getClientIp());
-                bizRQ.setSubject(payOrder.getSubject());
                 bizRQ.setNotifyUrl(payOrder.getNotifyUrl());
                 bizRQ.setReturnUrl(payOrder.getReturnUrl());
-                bizRQ.setChannelExtra(payOrder.getChannelExtra());
-                bizRQ.setExtParam(payOrder.getExtParam());
             }
 
             String mchNo = bizRQ.getMchId();
@@ -247,7 +241,6 @@ public abstract class AbstractPayOrderController extends ApiController {
         payOrder.setMchOrderNo(rq.getMchOrderNo()); //商户订单号
         payOrder.setAppId(mchApp == null ? null : mchApp.getAppId()); //商户应用appId
         payOrder.setIfCode(ifCode); //接口代码
-        payOrder.setWayCode(rq.getWayCode()); //支付方式
         payOrder.setAmount(rq.getAmount()); //订单金额
 
         if(mchFeeRate != null){
@@ -258,14 +251,10 @@ public abstract class AbstractPayOrderController extends ApiController {
 
         payOrder.setMchFeeAmount(AmountUtil.calPercentageFee(payOrder.getAmount(), payOrder.getMchFeeRate())); //商户手续费,单位分
 
-        payOrder.setCurrency(rq.getCurrency()); //币种
         payOrder.setState(PayOrder.STATE_INIT); //订单状态, 默认订单生成状态
         payOrder.setClientIp(StringUtils.defaultIfEmpty(rq.getClientIp(), getClientIp())); //客户端IP
-        payOrder.setSubject(rq.getSubject()); //商品标题
-        payOrder.setBody(rq.getBody()); //商品描述信息
 //        payOrder.setChannelExtra(rq.getChannelExtra()); //特殊渠道发起的附件额外参数,  是否应该删除该字段了？？ 比如authCode不应该记录， 只是在传输阶段存在的吧？  之前的为了在payOrder对象需要传参。
         payOrder.setChannelUser(rq.getChannelUserId()); //渠道用户标志
-        payOrder.setExtParam(rq.getExtParam()); //商户扩展参数
         payOrder.setNotifyUrl(rq.getNotifyUrl()); //异步通知地址
         payOrder.setReturnUrl(rq.getReturnUrl()); //页面跳转地址
 
@@ -274,11 +263,7 @@ public abstract class AbstractPayOrderController extends ApiController {
         Date nowDate = new Date();
 
         //订单过期时间 单位： 秒
-        if(rq.getExpiredTime() != null){
-            payOrder.setExpiredTime(DateUtil.offsetSecond(nowDate, rq.getExpiredTime()));
-        }else{
-            payOrder.setExpiredTime(DateUtil.offsetHour(nowDate, 2)); //订单过期时间 默认两个小时
-        }
+        payOrder.setExpiredTime(DateUtil.offsetHour(nowDate, 2)); //订单过期时间 默认两个小时
 
         payOrder.setCreatedAt(nowDate); //订单创建时间
         return payOrder;

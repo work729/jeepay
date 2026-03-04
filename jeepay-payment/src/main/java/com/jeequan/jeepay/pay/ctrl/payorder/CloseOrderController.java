@@ -62,7 +62,7 @@ public class CloseOrderController extends ApiController {
             throw new BizException("mchOrderNo 和 payOrderId 不能同时为空");
         }
 
-        PayOrder payOrder = payOrderService.queryMchOrder(rq.getMchNo(), rq.getPayOrderId(), rq.getMchOrderNo());
+        PayOrder payOrder = payOrderService.queryMchOrder(rq.getMchId(), rq.getPayOrderId(), rq.getMchOrderNo());
         if(payOrder == null){
             throw new BizException("订单不存在");
         }
@@ -77,9 +77,9 @@ public class CloseOrderController extends ApiController {
         if (payOrder.getState() == PayOrder.STATE_INIT) {
             payOrderService.updateInit2Close(payOrder.getPayOrderId());
             bizRes.setChannelRetMsg(ChannelRetMsg.confirmSuccess(null));
-            String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+            String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
             if(org.apache.commons.lang3.StringUtils.isBlank(secret)){
-                secret = configContextQueryService.queryMchApp(rq.getMchNo(), rq.getAppId()).getAppSecret();
+                secret = configContextQueryService.queryMchApp(rq.getMchId(), rq.getAppId()).getAppSecret();
             }
             return ApiRes.okWithSign(bizRes, secret);
         }
@@ -121,9 +121,9 @@ public class CloseOrderController extends ApiController {
             return null;
         }
 
-        String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+        String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
         if(org.apache.commons.lang3.StringUtils.isBlank(secret)){
-            secret = configContextQueryService.queryMchApp(rq.getMchNo(), rq.getAppId()).getAppSecret();
+            secret = configContextQueryService.queryMchApp(rq.getMchId(), rq.getAppId()).getAppSecret();
         }
         return ApiRes.okWithSign(bizRes, secret);
     }

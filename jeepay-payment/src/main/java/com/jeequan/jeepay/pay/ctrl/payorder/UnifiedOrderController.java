@@ -71,33 +71,6 @@ public class UnifiedOrderController extends AbstractPayOrderController {
                 }
             }
         }
-        if(!params.containsKey("signType")){
-            params.put("signType", "MD5");
-        }
-        if(!params.containsKey("extParam")){
-            JSONObject ext = new JSONObject();
-            if(params.containsKey("param2")){
-                ext.put("param2", params.getString("param2"));
-            }
-            if(params.containsKey("productId")){
-                ext.put("productId", params.get("productId"));
-            }
-            if(!ext.isEmpty()){
-                params.put("extParam", ext.toJSONString());
-            }
-        }
-        if(!params.containsKey("currency")){
-            params.put("currency", "CNY");
-        }
-        if(!params.containsKey("subject") && params.containsKey("mchOrderNo")){
-            params.put("subject", params.getString("mchOrderNo"));
-        }
-        if(!params.containsKey("body") && params.containsKey("subject")){
-            params.put("body", params.getString("subject"));
-        }
-        if(!params.containsKey("wayCode")){
-            params.put("wayCode", CS.PAY_WAY_CODE.QR_CASHIER);
-        }
 
         //获取参数 & 验签
         UnifiedOrderRQ rq = getRQByWithMchSign(UnifiedOrderRQ.class);
@@ -105,7 +78,7 @@ public class UnifiedOrderController extends AbstractPayOrderController {
         UnifiedOrderRQ bizRQ = buildBizRQ(rq);
 
         //实现子类的res
-        ApiRes apiRes = unifiedOrder(bizRQ.getWayCode(), bizRQ);
+        ApiRes apiRes = unifiedOrder("", bizRQ);
         if(apiRes.getData() == null){
             return apiRes;
         }
@@ -131,27 +104,6 @@ public class UnifiedOrderController extends AbstractPayOrderController {
 
 
     private UnifiedOrderRQ buildBizRQ(UnifiedOrderRQ rq){
-
-        //支付方式  比如： ali_bar
-        String wayCode = rq.getWayCode();
-
-        //jsapi 收银台聚合支付场景 (不校验是否存在payWayCode)
-        if(CS.PAY_WAY_CODE.QR_CASHIER.equals(wayCode)){
-            return rq.buildBizRQ();
-        }
-
-        //如果是自动分类条码
-        if(CS.PAY_WAY_CODE.AUTO_BAR.equals(wayCode)){
-
-            AutoBarOrderRQ bizRQ = (AutoBarOrderRQ)rq.buildBizRQ();
-            wayCode = JeepayKit.getPayWayCodeByBarCode(bizRQ.getAuthCode());
-            rq.setWayCode(wayCode.trim());
-        }
-
-        if(payWayService.count(PayWay.gw().eq(PayWay::getWayCode, wayCode)) <= 0){
-            throw new BizException("不支持的支付方式");
-        }
-
         //转换为 bizRQ
         return rq.buildBizRQ();
     }

@@ -31,7 +31,6 @@ public class UpPcOrderRQ extends CommonPayDataRQ {
 
     /** 构造函数 **/
     public UpPcOrderRQ(){
-        this.setWayCode(CS.PAY_WAY_CODE.UP_PC);
     }
 
 }

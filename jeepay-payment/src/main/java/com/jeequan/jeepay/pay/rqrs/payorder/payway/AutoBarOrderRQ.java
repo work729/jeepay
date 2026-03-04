@@ -35,7 +35,6 @@ public class AutoBarOrderRQ extends UnifiedOrderRQ {
 
     /** 构造函数 **/
     public AutoBarOrderRQ(){
-        this.setWayCode(CS.PAY_WAY_CODE.AUTO_BAR);
     }
 
 }

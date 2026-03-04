@@ -47,33 +47,21 @@ import jakarta.validation.constraints.NotNull;
 @Data
 public class UnifiedOrderRQ extends AbstractMchAppRQ {
 
+    /** 商品ID **/
+    @NotBlank(message="商品ID")
+    private String productId;
+
     /** 商户订单号 **/
     @NotBlank(message="商户订单号不能为空")
     private String mchOrderNo;
-
-    /** 支付方式  如： wxpay_jsapi,alipay_wap等   **/
-    @NotBlank(message="支付方式不能为空")
-    private String wayCode;
 
     /** 支付金额， 单位：分 **/
     @NotNull(message="支付金额不能为空")
     @Min(value = 1, message = "支付金额不能为空")
     private Long amount;
 
-    /** 货币代码 **/
-    @NotBlank(message="货币代码不能为空")
-    private String currency;
-
     /** 客户端IP地址 **/
     private String clientIp;
-
-    /** 商品标题 **/
-    @NotBlank(message="商品标题不能为空")
-    private String subject;
-
-    /** 商品描述信息 **/
-    @NotBlank(message="商品描述信息不能为空")
-    private String body;
 
     /** 异步通知地址 **/
     private String notifyUrl;
@@ -81,58 +69,8 @@ public class UnifiedOrderRQ extends AbstractMchAppRQ {
     /** 跳转通知地址 **/
     private String returnUrl;
 
-    /** 订单失效时间, 单位：秒 **/
-    private Integer expiredTime;
-
-    /** 特定渠道发起额外参数 **/
-    private String channelExtra;
-
-    /** 商户扩展参数 **/
-    private String extParam;
-
- 
-
     /** 返回真实的bizRQ **/
     public UnifiedOrderRQ buildBizRQ(){
-
-        if(CS.PAY_WAY_CODE.QR_CASHIER.equals(wayCode)){
-            QrCashierOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), QrCashierOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.AUTO_BAR.equals(wayCode)){
-            AutoBarOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), AutoBarOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_APP.equals(wayCode)){
-            UpAppOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpAppOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_WAP.equals(wayCode)){
-            UpWapOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpWapOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_QR.equals(wayCode)){
-            UpQrOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpQrOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_BAR.equals(wayCode)){
-            UpBarOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpBarOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_B2B.equals(wayCode)){
-            UpB2bOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpB2bOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_PC.equals(wayCode)){
-            UpPcOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpPcOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }else if(CS.PAY_WAY_CODE.UP_JSAPI.equals(wayCode)){
-            UpJsapiOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), UpJsapiOrderRQ.class);
-            BeanUtils.copyProperties(this, bizRQ);
-            return bizRQ;
-        }
-
         return this;
     }
 

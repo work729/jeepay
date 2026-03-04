@@ -57,13 +57,13 @@ public class QueryOrderController extends ApiController {
             throw new BizException("mchOrderNo 和 payOrderId不能同时为空");
         }
 
-        PayOrder payOrder = payOrderService.queryMchOrder(rq.getMchNo(), rq.getPayOrderId(), rq.getMchOrderNo());
+        PayOrder payOrder = payOrderService.queryMchOrder(rq.getMchId(), rq.getPayOrderId(), rq.getMchOrderNo());
         if(payOrder == null){
             throw new BizException("订单不存在");
         }
 
         QueryPayOrderRS bizRes = QueryPayOrderRS.buildByPayOrder(payOrder);
-        String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+        String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
         return ApiRes.okWithSign(bizRes, secret);
     }
 

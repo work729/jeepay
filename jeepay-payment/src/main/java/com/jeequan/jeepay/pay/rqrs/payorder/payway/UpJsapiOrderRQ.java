@@ -37,7 +37,6 @@ public class UpJsapiOrderRQ extends UnifiedOrderRQ {
 
     /** 构造函数 **/
     public UpJsapiOrderRQ(){
-        this.setWayCode(CS.PAY_WAY_CODE.UP_JSAPI);
     }
 
     @Override

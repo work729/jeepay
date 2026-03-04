@@ -73,7 +73,7 @@ public class TransferOrderController extends ApiController {
         try {
 
 
-            String mchNo = bizRQ.getMchNo();
+            String mchNo = bizRQ.getMchId();
             String appId = bizRQ.getAppId();
             String ifCode = bizRQ.getIfCode();
 
@@ -149,7 +149,7 @@ public class TransferOrderController extends ApiController {
             }
 
             TransferOrderRS bizRes = TransferOrderRS.buildByRecord(transferOrder);
-            String secret = configContextQueryService.getMchInfoContext(bizRQ.getMchNo()).getMchInfo().getMchSecret();
+            String secret = configContextQueryService.getMchInfoContext(bizRQ.getMchId()).getMchInfo().getMchSecret();
             return ApiRes.okWithSign(bizRes, secret);
 
         } catch (Exception e) {

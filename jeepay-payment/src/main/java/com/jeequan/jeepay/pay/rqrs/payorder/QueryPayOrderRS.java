@@ -81,11 +81,6 @@ public class QueryPayOrderRS extends AbstractRS {
     private String clientIp;
 
     /**
-     * 商品标题
-     */
-    private String subject;
-
-    /**
      * 商品描述信息
      */
     private String body;

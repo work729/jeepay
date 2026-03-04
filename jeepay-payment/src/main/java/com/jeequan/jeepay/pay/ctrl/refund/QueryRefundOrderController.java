@@ -57,13 +57,13 @@ public class QueryRefundOrderController extends ApiController {
             throw new BizException("mchRefundNo 和 refundOrderId不能同时为空");
         }
 
-        RefundOrder refundOrder = refundOrderService.queryMchOrder(rq.getMchNo(), rq.getMchRefundNo(), rq.getRefundOrderId());
+        RefundOrder refundOrder = refundOrderService.queryMchOrder(rq.getMchId(), rq.getMchRefundNo(), rq.getRefundOrderId());
         if(refundOrder == null){
             throw new BizException("订单不存在");
         }
 
         QueryRefundOrderRS bizRes = QueryRefundOrderRS.buildByRefundOrder(refundOrder);
-        String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+        String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
         return ApiRes.okWithSign(bizRes, secret);
     }
 }

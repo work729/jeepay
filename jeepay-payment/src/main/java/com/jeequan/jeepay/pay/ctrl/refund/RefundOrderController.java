@@ -82,7 +82,7 @@ public class RefundOrderController extends ApiController {
                 throw new BizException("异步通知地址协议仅支持http:// 或 https:// !");
             }
 
-            PayOrder payOrder = payOrderService.queryMchOrder(rq.getMchNo(), rq.getPayOrderId(), rq.getMchOrderNo());
+            PayOrder payOrder = payOrderService.queryMchOrder(rq.getMchId(), rq.getPayOrderId(), rq.getMchOrderNo());
             if(payOrder == null){
                 throw new BizException("退款订单不存在");
             }
@@ -113,7 +113,7 @@ public class RefundOrderController extends ApiController {
                 throw new BizException("申请金额超出订单可退款余额，请检查退款金额");
             }
 
-            String mchNo = rq.getMchNo();
+            String mchNo = rq.getMchId();
             String appId = rq.getAppId();
 
             // 校验退款单号是否重复
@@ -149,7 +149,7 @@ public class RefundOrderController extends ApiController {
             this.processChannelMsg(channelRetMsg, refundOrder);
 
             RefundOrderRS bizRes = RefundOrderRS.buildByRefundOrder(refundOrder);
-            String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+            String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
             return ApiRes.okWithSign(bizRes, secret);
 
 
@@ -166,7 +166,7 @@ public class RefundOrderController extends ApiController {
             }
 
             RefundOrderRS bizRes = RefundOrderRS.buildByRefundOrder(refundOrder);
-            String secret = configContextQueryService.getMchInfoContext(rq.getMchNo()).getMchInfo().getMchSecret();
+            String secret = configContextQueryService.getMchInfoContext(rq.getMchId()).getMchInfo().getMchSecret();
             return ApiRes.okWithSign(bizRes, secret);
 
 

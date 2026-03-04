@@ -31,7 +31,6 @@ public class UpWapOrderRQ extends CommonPayDataRQ {
 
     /** 构造函数 **/
     public UpWapOrderRQ(){
-        this.setWayCode(CS.PAY_WAY_CODE.UP_WAP);
     }
 
 }
