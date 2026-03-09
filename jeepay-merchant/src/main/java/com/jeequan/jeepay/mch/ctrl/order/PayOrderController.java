@@ -48,9 +48,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 支付订单管理类
@@ -168,6 +174,149 @@ public class PayOrderController extends CommonCtrl {
         }
         return ApiRes.ok(payOrder);
     }
+
+    /**
+     * 支付订单列表导出（CSV）
+     */
+    @Operation(summary = "支付订单列表导出（CSV）")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "createdStart", description = "开始时间"),
+            @Parameter(name = "createdEnd", description = "结束时间"),
+            @Parameter(name = "unionOrderId", description = "支付/商户/渠道订单号"),
+            @Parameter(name = "wayCode", description = "支付方式代码"),
+            @Parameter(name = "state", description = "支付状态"),
+            @Parameter(name = "notifyState", description = "回调状态"),
+            @Parameter(name = "nextDayCallback", description = "是否隔日回调")
+    })
+    @PreAuthorize("hasAuthority('ENT_ORDER_LIST')")
+    @GetMapping("/export")
+    public void export(HttpServletResponse response) throws IOException {
+        PayOrder payOrder = getObject(PayOrder.class);
+        JSONObject paramJSON = getReqParamJSON();
+        LambdaQueryWrapper<PayOrder> wrapper = PayOrder.gw();
+        wrapper.eq(PayOrder::getMchNo, getCurrentMchNo());
+
+        if (payOrder != null) {
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(payOrder.getPayOrderId())) {
+                wrapper.eq(PayOrder::getPayOrderId, payOrder.getPayOrderId());
+            }
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(payOrder.getIsvNo())) {
+                wrapper.eq(PayOrder::getIsvNo, payOrder.getIsvNo());
+            }
+            if (payOrder.getMchType() != null) {
+                wrapper.eq(PayOrder::getMchType, payOrder.getMchType());
+            }
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(payOrder.getWayCode())) {
+                wrapper.eq(PayOrder::getWayCode, payOrder.getWayCode());
+            }
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(payOrder.getMchOrderNo())) {
+                wrapper.eq(PayOrder::getMchOrderNo, payOrder.getMchOrderNo());
+            }
+            if (payOrder.getState() != null) {
+                wrapper.eq(PayOrder::getState, payOrder.getState());
+            }
+            if (payOrder.getNotifyState() != null) {
+                wrapper.eq(PayOrder::getNotifyState, payOrder.getNotifyState());
+            }
+        }
+
+        if (paramJSON != null) {
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(paramJSON.getString("createdStart"))) {
+                wrapper.ge(PayOrder::getCreatedAt, paramJSON.getString("createdStart"));
+            }
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(paramJSON.getString("createdEnd"))) {
+                wrapper.le(PayOrder::getCreatedAt, paramJSON.getString("createdEnd"));
+            }
+        }
+        if (paramJSON != null && org.apache.commons.lang3.StringUtils.isNotEmpty(paramJSON.getString("unionOrderId"))) {
+            wrapper.and(wr -> {
+                wr.eq(PayOrder::getPayOrderId, paramJSON.getString("unionOrderId"))
+                        .or().eq(PayOrder::getMchOrderNo, paramJSON.getString("unionOrderId"))
+                        .or().eq(PayOrder::getChannelOrderNo, paramJSON.getString("unionOrderId"));
+            });
+        }
+        if (paramJSON != null && paramJSON.containsKey("nextDayCallback")) {
+            Boolean nextDayCallback = paramJSON.getBoolean("nextDayCallback");
+            if (nextDayCallback != null && nextDayCallback) {
+                wrapper.eq(PayOrder::getState, PayOrder.STATE_SUCCESS)
+                        .isNotNull(PayOrder::getSuccessTime)
+                        .isNotNull(PayOrder::getNotifySuccessTime)
+                        .apply("DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')");
+            } else if (nextDayCallback != null && !nextDayCallback) {
+                wrapper.eq(PayOrder::getState, PayOrder.STATE_SUCCESS)
+                        .isNotNull(PayOrder::getSuccessTime)
+                        .isNotNull(PayOrder::getNotifySuccessTime)
+                        .apply("DATE_FORMAT(success_time, '%Y-%m-%d') = DATE_FORMAT(notify_success_time, '%Y-%m-%d')");
+            }
+        }
+
+        wrapper.orderByDesc(PayOrder::getCreatedAt);
+
+        List<PayOrder> orders = payOrderService.list(wrapper);
+
+        Map<String, String> payWayNameMap = new HashMap<>();
+        List<PayWay> payWayList = payWayService.list();
+        if (!org.springframework.util.CollectionUtils.isEmpty(payWayList)) {
+            payWayNameMap = payWayList.stream().collect(Collectors.toMap(PayWay::getWayCode, PayWay::getWayName));
+        }
+
+        String filename = "pay-orders-" + System.currentTimeMillis() + ".csv";
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(filename, "UTF-8"));
+
+        try (OutputStream os = response.getOutputStream()) {
+            os.write(new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF});
+            String header = String.join(",",
+                    "支付订单号","商户订单号","渠道订单号",
+                    "应用ID","支付方式","支付金额(元)","退款金额(元)","手续费(元)",
+                    "订单状态","创建时间","支付成功时间","回调成功时间"
+            ) + "\n";
+            os.write(header.getBytes(StandardCharsets.UTF_8));
+            for (PayOrder o : orders) {
+                String wayName = org.apache.commons.lang3.StringUtils.defaultString(payWayNameMap.get(o.getWayCode()), o.getWayCode());
+                String stateName =
+                        o.getState() == 0 ? "订单生成" :
+                        o.getState() == 1 ? "支付中" :
+                        o.getState() == 2 ? "支付成功" :
+                        o.getState() == 3 ? "支付失败" :
+                        o.getState() == 4 ? "已撤销" :
+                        o.getState() == 5 ? "已退款" :
+                        o.getState() == 6 ? "订单关闭" : "未知";
+                String line = String.join(",",
+                        safe(o.getPayOrderId()),
+                        safe(o.getMchOrderNo()),
+                        safe(o.getChannelOrderNo()),
+                        safe(wayName),
+                        amountYuan(o.getAmount()),
+                        amountYuan(o.getRefundAmount()),
+                        amountYuan(o.getMchFeeAmount()),
+                        stateName,
+                        safeDate(o.getCreatedAt()),
+                        safeDate(o.getSuccessTime()),
+                        safeDate(o.getNotifySuccessTime())
+                ) + "\n";
+                os.write(line.getBytes(StandardCharsets.UTF_8));
+            }
+            os.flush();
+        }
+    }
+
+    private String amountYuan(Long cents) {
+        if (cents == null) return "0.00";
+        java.math.BigDecimal bd = new java.math.BigDecimal(cents).divide(new java.math.BigDecimal(100), 2, java.math.RoundingMode.HALF_UP);
+        return bd.toPlainString();
+    }
+    private String safe(String s) {
+        if (s == null) return "";
+        return s.replaceAll("[\\r\\n]", " ");
+    }
+    private String safeDate(java.util.Date d) {
+        if (d == null) return "";
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(d);
+    }
+
+
 
 
     /**
