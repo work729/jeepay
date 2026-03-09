@@ -263,7 +263,37 @@
             ROUND(IFNULL(SUM(CASE WHEN state = 2 THEN 0 ELSE 0 END), 0)/100, 2) AS agentIncome,
             ROUND(IFNULL(SUM(CASE WHEN state = 2 THEN IFNULL(mch_fee_amount, 0) ELSE 0 END), 0)/100, 2) AS platformIncome,
             SUM(CASE WHEN state IN (0, 1, 3) THEN 1 ELSE 0 END) AS unpaidOrderCount,
-            ROUND(IFNULL(SUM(CASE WHEN state IN (0, 1, 3) THEN amount ELSE 0 END), 0)/100, 2) AS unpaidAmount
+            ROUND(IFNULL(SUM(CASE WHEN state IN (0, 1, 3) THEN amount ELSE 0 END), 0)/100, 2) AS unpaidAmount,
+            SUM(CASE 
+                    WHEN state = 2 
+                     AND success_time IS NOT NULL 
+                     AND notify_success_time IS NOT NULL 
+                     AND DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')
+                THEN 1 ELSE 0 END) AS callbackOrderCount,
+            ROUND(IFNULL(SUM(CASE 
+                    WHEN state = 2 
+                     AND success_time IS NOT NULL 
+                     AND notify_success_time IS NOT NULL 
+                     AND DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')
+                THEN amount ELSE 0 END), 0)/100, 2) AS callbackTotalAmount,
+            ROUND(IFNULL(SUM(CASE 
+                    WHEN state = 2 
+                     AND success_time IS NOT NULL 
+                     AND notify_success_time IS NOT NULL 
+                     AND DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')
+                THEN (amount - IFNULL(refund_amount, 0) - IFNULL(mch_fee_amount, 0)) ELSE 0 END), 0)/100, 2) AS callbackMchIncome,
+            ROUND(IFNULL(SUM(CASE 
+                    WHEN state = 2 
+                     AND success_time IS NOT NULL 
+                     AND notify_success_time IS NOT NULL 
+                     AND DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')
+                THEN 0 ELSE 0 END), 0)/100, 2) AS callbackAgentIncome,
+            ROUND(IFNULL(SUM(CASE 
+                    WHEN state = 2 
+                     AND success_time IS NOT NULL 
+                     AND notify_success_time IS NOT NULL 
+                     AND DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')
+                THEN IFNULL(mch_fee_amount, 0) ELSE 0 END), 0)/100, 2) AS callbackPlatformIncome
         FROM t_pay_order
         WHERE 1=1
         <if test="param.mchNo != null and param.mchNo != ''"> AND mch_no = #{param.mchNo} </if>

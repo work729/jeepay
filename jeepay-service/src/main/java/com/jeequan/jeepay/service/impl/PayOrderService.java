@@ -638,6 +638,13 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         result.put("unpaidAmount", statsMap.get("unpaidAmount") != null ? statsMap.get("unpaidAmount") : "0.00");
         result.put("successRate", successRate);
         
+        // 隔日回调统计
+        result.put("callbackOrderCount", statsMap.get("callbackOrderCount") != null ? statsMap.get("callbackOrderCount") : 0L);
+        result.put("callbackTotalAmount", statsMap.get("callbackTotalAmount") != null ? statsMap.get("callbackTotalAmount") : "0.00");
+        result.put("callbackMchIncome", statsMap.get("callbackMchIncome") != null ? statsMap.get("callbackMchIncome") : "0.00");
+        result.put("callbackAgentIncome", statsMap.get("callbackAgentIncome") != null ? statsMap.get("callbackAgentIncome") : "0.00");
+        result.put("callbackPlatformIncome", statsMap.get("callbackPlatformIncome") != null ? statsMap.get("callbackPlatformIncome") : "0.00");
+        
         return result;
     }
 }
