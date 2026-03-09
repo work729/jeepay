@@ -121,6 +121,32 @@ public class PayOrderController extends CommonCtrl {
     }
 
     /**
+     * @describe: 订单列表统计（商户侧）
+     */
+    @Operation(summary = "订单列表统计")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "createdStart", description = "日期格式字符串（yyyy-MM-dd HH:mm:ss），时间范围查询--开始时间"),
+            @Parameter(name = "createdEnd", description = "日期格式字符串（yyyy-MM-dd HH:mm:ss），时间范围查询--结束时间"),
+            @Parameter(name = "unionOrderId", description = "支付/商户/渠道订单号"),
+            @Parameter(name = "appId", description = "应用 ID"),
+            @Parameter(name = "wayCode", description = "支付方式代码"),
+            @Parameter(name = "state", description = "支付状态"),
+            @Parameter(name = "notifyState", description = "向下游回调状态")
+    })
+    @PreAuthorize("hasAuthority('ENT_ORDER_LIST')")
+    @GetMapping("/stats")
+    public ApiRes stats() {
+        JSONObject paramJSON = getReqParamJSON();
+        if (paramJSON == null) {
+            paramJSON = new JSONObject();
+        }
+        // 商户侧限定当前商户
+        paramJSON.put("mchNo", getCurrentMchNo());
+        return ApiRes.ok(payOrderService.orderListStats(paramJSON));
+    }
+
+    /**
      * @Author: ZhuXiao
      * @Description: 支付订单信息
      * @Date: 10:43 2021/5/13
