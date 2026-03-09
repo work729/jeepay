@@ -14,6 +14,8 @@ server:
   servlet:
     context-path: / #设置应用的目录.  前缀需要带/, 无需设置后缀, 示例 【 /xxx 】 or 【 / 】
 spring:
+  main:
+    allow-circular-references: true
   servlet:
     multipart:
       enabled: true #是否启用http上传处理

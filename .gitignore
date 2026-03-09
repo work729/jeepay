@@ -57,3 +57,6 @@ unpackage/
 docker/rocketmq/broker/logs/
 docker/rocketmq/broker/store/
 docker/rocketmq/namesrv/
+conf/manager/application-prod.yml
+conf/merchant/application-prod.yml
+conf/payment/application-prod.yml
