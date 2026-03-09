@@ -304,6 +304,12 @@ public class PayOrder extends BaseModel implements Serializable {
     private Date successTime;
 
     /**
+     * 订单回调成功时间（通知下游成功时间）
+     */
+    @Schema(title = "notifySuccessTime", description = "订单回调成功时间（通知下游成功时间）")
+    private Date notifySuccessTime;
+
+    /**
      * 创建时间
      */
     @Schema(title = "createdAt", description = "创建时间")

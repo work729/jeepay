@@ -229,6 +229,14 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         return baseMapper.updateById(payOrder);
     }
 
+    /** 更新订单回调成功时间 **/
+    public int updateNotifySuccessTime(String payOrderId){
+        PayOrder payOrder = new PayOrder();
+        payOrder.setNotifySuccessTime(new Date());
+        payOrder.setPayOrderId(payOrderId);
+        return baseMapper.updateById(payOrder);
+    }
+
     /** 首页支付周统计 **/
     public JSONObject mainPageWeekCount(String mchNo) {
         JSONObject json = new JSONObject();
@@ -536,6 +544,23 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
                         .or().eq(PayOrder::getMchOrderNo, paramJSON.getString("unionOrderId"))
                         .or().eq(PayOrder::getChannelOrderNo, paramJSON.getString("unionOrderId"));
             });
+        }
+
+        // 隔日回调：支付成功时间与回调成功时间不在同一天
+        if (paramJSON != null && paramJSON.containsKey("nextDayCallback")) {
+            Boolean nextDayCallback = paramJSON.getBoolean("nextDayCallback");
+            if (nextDayCallback != null && nextDayCallback) {
+                wrapper.eq(PayOrder::getState, PayOrder.STATE_SUCCESS)
+                       .isNotNull(PayOrder::getSuccessTime)
+                       .isNotNull(PayOrder::getNotifySuccessTime)
+                       .apply("DATE_FORMAT(success_time, '%Y-%m-%d') != DATE_FORMAT(notify_success_time, '%Y-%m-%d')");
+            } else if (nextDayCallback != null && !nextDayCallback) {
+                // 选择"否"时，查询当日回调的订单（支付成功时间与回调成功时间在同一天）
+                wrapper.eq(PayOrder::getState, PayOrder.STATE_SUCCESS)
+                       .isNotNull(PayOrder::getSuccessTime)
+                       .isNotNull(PayOrder::getNotifySuccessTime)
+                       .apply("DATE_FORMAT(success_time, '%Y-%m-%d') = DATE_FORMAT(notify_success_time, '%Y-%m-%d')");
+            }
         }
 
         wrapper.orderByDesc(PayOrder::getCreatedAt);

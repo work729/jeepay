@@ -91,6 +91,10 @@ public class PayOrderMchNotifyMQReceiver implements PayOrderMchNotifyMQ.IMQRecei
             //通知成功
             if("SUCCESS".equalsIgnoreCase(res)){
                 mchNotifyRecordService.updateNotifyResult(notifyId, MchNotifyRecord.STATE_SUCCESS, res);
+                // 更新支付订单回调成功时间
+                if(MchNotifyRecord.TYPE_PAY_ORDER == record.getOrderType()){
+                    payOrderService.updateNotifySuccessTime(record.getOrderId());
+                }
                 return;
             }
 
