@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.*;
 
 /**
@@ -566,5 +567,77 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         wrapper.orderByDesc(PayOrder::getCreatedAt);
 
         return page(iPage, wrapper);
+    }
+
+    /**
+     * 订单列表统计
+     * @param paramJSON 查询参数
+     * @return 统计数据
+     */
+    public JSONObject orderListStats(JSONObject paramJSON) {
+        JSONObject result = new JSONObject();
+        
+        // 构建查询参数 Map
+        Map<String, Object> param = new HashMap<>();
+        if (paramJSON != null) {
+            if (StringUtils.isNotEmpty(paramJSON.getString("mchNo"))) {
+                param.put("mchNo", paramJSON.getString("mchNo"));
+            }
+            if (StringUtils.isNotEmpty(paramJSON.getString("isvNo"))) {
+                param.put("isvNo", paramJSON.getString("isvNo"));
+            }
+            if (StringUtils.isNotEmpty(paramJSON.getString("appId"))) {
+                param.put("appId", paramJSON.getString("appId"));
+            }
+            if (StringUtils.isNotEmpty(paramJSON.getString("wayCode"))) {
+                param.put("wayCode", paramJSON.getString("wayCode"));
+            }
+            if (paramJSON.getInteger("state") != null) {
+                param.put("state", paramJSON.getInteger("state"));
+            }
+            if (paramJSON.getInteger("notifyState") != null) {
+                param.put("notifyState", paramJSON.getInteger("notifyState"));
+            }
+            if (StringUtils.isNotEmpty(paramJSON.getString("unionOrderId"))) {
+                // 三合一订单号查询
+                param.put("payOrderId", paramJSON.getString("unionOrderId"));
+                param.put("mchOrderNo", paramJSON.getString("unionOrderId"));
+                param.put("channelOrderNo", paramJSON.getString("unionOrderId"));
+            }
+            if (StringUtils.isNotEmpty(paramJSON.getString("createdStart"))) {
+                param.put("createTimeStart", paramJSON.getString("createdStart"));
+            }
+            if (StringUtils.isNotEmpty(paramJSON.getString("createdEnd"))) {
+                param.put("createTimeEnd", paramJSON.getString("createdEnd"));
+            }
+        }
+        
+        // 调用 Mapper 查询统计
+        Map<String, Object> statsMap = payOrderMapper.selectOrderListStats(param);
+        
+        // 计算成功率
+        Long submitOrderCount = statsMap.get("submitOrderCount") != null ? 
+            Long.valueOf(statsMap.get("submitOrderCount").toString()) : 0L;
+        Long successOrderCount = statsMap.get("successOrderCount") != null ? 
+            Long.valueOf(statsMap.get("successOrderCount").toString()) : 0L;
+        
+        BigDecimal successRate = BigDecimal.ZERO;
+        if (submitOrderCount > 0) {
+            successRate = new BigDecimal(successOrderCount).divide(new BigDecimal(submitOrderCount), 4, BigDecimal.ROUND_HALF_UP)
+                    .multiply(new BigDecimal("100")).setScale(2, BigDecimal.ROUND_HALF_UP);
+        }
+        
+        result.put("submitOrderCount", submitOrderCount);
+        result.put("allAmount", statsMap.get("allAmount") != null ? statsMap.get("allAmount") : "0.00");
+        result.put("successOrderCount", successOrderCount);
+        result.put("successAmount", statsMap.get("successAmount") != null ? statsMap.get("successAmount") : "0.00");
+        result.put("mchIncome", statsMap.get("mchIncome") != null ? statsMap.get("mchIncome") : "0.00");
+        result.put("agentIncome", statsMap.get("agentIncome") != null ? statsMap.get("agentIncome") : "0.00");
+        result.put("platformIncome", statsMap.get("platformIncome") != null ? statsMap.get("platformIncome") : "0.00");
+        result.put("unpaidOrderCount", statsMap.get("unpaidOrderCount") != null ? statsMap.get("unpaidOrderCount") : 0L);
+        result.put("unpaidAmount", statsMap.get("unpaidAmount") != null ? statsMap.get("unpaidAmount") : "0.00");
+        result.put("successRate", successRate);
+        
+        return result;
     }
 }

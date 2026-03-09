@@ -64,4 +64,7 @@ public interface PayOrderMapper extends BaseMapper<PayOrder> {
 
     /** 商户当日产品维度统计 **/
     List<Map> selectProductStatsByMchForDay(@Param("param") Map param);
+
+    /** 订单列表统计 **/
+    Map selectOrderListStats(@Param("param") Map param);
 }

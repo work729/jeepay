@@ -144,6 +144,30 @@ public class PayOrderController extends CommonCtrl {
         return ApiRes.ok(payOrder);
     }
 
+    /**
+     * @describe: 订单列表统计
+     */
+    @Operation(summary = "订单列表统计")
+    @Parameters({
+            @Parameter(name = "iToken", description = "用户身份凭证", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "createdStart", description = "日期格式字符串（yyyy-MM-dd HH:mm:ss），时间范围查询--开始时间"),
+            @Parameter(name = "createdEnd", description = "日期格式字符串（yyyy-MM-dd HH:mm:ss），时间范围查询--结束时间"),
+            @Parameter(name = "mchNo", description = "商户号"),
+            @Parameter(name = "unionOrderId", description = "支付/商户/渠道订单号"),
+            @Parameter(name = "isvNo", description = "服务商号"),
+            @Parameter(name = "appId", description = "应用 ID"),
+            @Parameter(name = "wayCode", description = "支付方式代码"),
+            @Parameter(name = "state", description = "支付状态"),
+            @Parameter(name = "notifyState", description = "向下游回调状态"),
+            @Parameter(name = "nextDayCallback", description = "是否隔日回调"),
+    })
+    @PreAuthorize("hasAuthority('ENT_ORDER_LIST')")
+    @RequestMapping(value="/stats", method = RequestMethod.GET)
+    public ApiRes stats() {
+        JSONObject paramJSON = getReqParamJSON();
+        return ApiRes.ok(payOrderService.orderListStats(paramJSON));
+    }
+
 
     /**
      * 发起订单退款
