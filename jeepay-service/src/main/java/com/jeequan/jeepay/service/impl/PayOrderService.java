@@ -537,6 +537,12 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
             if (StringUtils.isNotEmpty(paramJSON.getString("createdEnd"))) {
                 wrapper.le(PayOrder::getCreatedAt, paramJSON.getString("createdEnd"));
             }
+            if (paramJSON.getLong("channel_id") != null) {
+                wrapper.eq(PayOrder::getChannelId, paramJSON.getLong("channel_id"));
+            }
+            if (paramJSON.getLong("product_id") != null) {
+                wrapper.eq(PayOrder::getProductId, paramJSON.getLong("product_id"));
+            }
         }
         // 三合一订单
         if (paramJSON != null && StringUtils.isNotEmpty(paramJSON.getString("unionOrderId"))) {
@@ -591,6 +597,12 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
             }
             if (StringUtils.isNotEmpty(paramJSON.getString("wayCode"))) {
                 param.put("wayCode", paramJSON.getString("wayCode"));
+            }
+            if (paramJSON.getLong("channel_id") != null) {
+                param.put("channelId", paramJSON.getLong("channel_id"));
+            }
+            if (paramJSON.getLong("product_id") != null) {
+                param.put("productId", paramJSON.getLong("product_id"));
             }
             if (paramJSON.getInteger("state") != null) {
                 param.put("state", paramJSON.getInteger("state"));

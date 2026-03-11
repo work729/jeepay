@@ -300,6 +300,8 @@
         <if test="param.isvNo != null and param.isvNo != ''"> AND isv_no = #{param.isvNo} </if>
         <if test="param.appId != null and param.appId != ''"> AND app_id = #{param.appId} </if>
         <if test="param.wayCode != null and param.wayCode != ''"> AND way_code = #{param.wayCode} </if>
+        <if test="param.channelId != null"> AND channel_id = #{param.channelId} </if>
+        <if test="param.productId != null"> AND product_id = #{param.productId} </if>
         <if test="param.state != null"> AND state = #{param.state} </if>
         <if test="param.notifyState != null"> AND notify_state = #{param.notifyState} </if>
         <if test="param.payOrderId != null and param.payOrderId != ''"> AND pay_order_id = #{param.payOrderId} </if>
