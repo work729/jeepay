@@ -120,15 +120,6 @@ public class PayInterfaceDefineController extends CommonCtrl {
     public ApiRes add() {
         PayInterfaceDefine payInterfaceDefine = getObject(PayInterfaceDefine.class);
 
-        JSONArray jsonArray = new JSONArray();
-        String[] wayCodes = getValStringRequired("wayCodeStrs").split(",");
-        for (String wayCode : wayCodes) {
-            JSONObject object = new JSONObject();
-            object.put("wayCode", wayCode);
-            jsonArray.add(object);
-        }
-        payInterfaceDefine.setWayCodes(jsonArray);
-
         boolean result = payInterfaceDefineService.save(payInterfaceDefine);
         if (!result) {
             return ApiRes.fail(ApiCodeEnum.SYS_OPERATION_FAIL_CREATE);

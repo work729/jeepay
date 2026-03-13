@@ -473,6 +473,7 @@ CREATE TABLE `t_pay_channel`
     `channel_sign`        varchar(64)  NOT NULL COMMENT '通道标识',
     `channel_name`        varchar(128) NOT NULL COMMENT '通道名称',
     `if_code`             varchar(64)  NOT NULL COMMENT '接口代码',
+    `channel_code`        varchar(16)  NOT NULL COMMENT '接口代码',
     `channel_rate`        decimal  NOT NULL COMMENT '通道费率%',
     `state`               tinyint(1) NOT NULL DEFAULT 1 COMMENT '通道状态: 0-停用, 1-启用',
     `is_float`            tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否浮动: 0-否, 1-是',

@@ -40,6 +40,9 @@ public class PayChannel extends BaseModel implements Serializable {
     @Schema(title = "channelName", description = "通道名称")
     private String channelName;
 
+    @Schema(title = "channelCode", description = "通道编码")
+    private String channelCode;
+
     @Schema(title = "ifCode", description = "接口代码")
     private String ifCode;
 
