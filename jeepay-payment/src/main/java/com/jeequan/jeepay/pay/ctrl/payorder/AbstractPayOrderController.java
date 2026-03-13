@@ -109,6 +109,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 bizRQ.setAppId(payOrder.getAppId());
                 bizRQ.setMchOrderNo(payOrder.getMchOrderNo());
                 bizRQ.setAmount(payOrder.getAmount());
+                bizRQ.setProductId(payOrder.getProductId());
                 bizRQ.setClientIp(payOrder.getClientIp());
                 bizRQ.setNotifyUrl(payOrder.getNotifyUrl());
                 bizRQ.setReturnUrl(payOrder.getReturnUrl());
@@ -145,7 +146,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 }
             }
 
-            RouteConfig routeConfig = findRouteConfig(mchAppConfigContext, wayCode);
+            RouteConfig routeConfig = findRouteConfig(mchAppConfigContext, bizRQ);
 
             IPaymentService paymentService = checkMchWayCodeAndGetService(mchAppConfigContext, routeConfig.getIfCode(), wayCode);
             String ifCode = paymentService.getIfCode();
@@ -383,7 +384,7 @@ public abstract class AbstractPayOrderController extends ApiController {
     }
 
 
-    private RouteConfig findRouteConfig(MchAppConfigContext mchAppConfigContext, String wayCode){
+    private RouteConfig findRouteConfig(MchAppConfigContext mchAppConfigContext, UnifiedOrderRQ bizRQ){
 
         MchInfo mchInfo = mchAppConfigContext.getMchInfo();
         if(mchInfo == null || mchInfo.getId() == null){
@@ -391,14 +392,19 @@ public abstract class AbstractPayOrderController extends ApiController {
         }
 
         Long mchId = mchInfo.getId();
+        Long reqProductId = bizRQ.getProductId();
+        if(reqProductId == null){
+            throw new BizException("产品ID不能为空");
+        }
 
         List<MchPayProduct> mchPayProducts = mchPayProductService.list(
                 MchPayProduct.gw()
                         .eq(MchPayProduct::getMchId, mchId)
+                        .eq(MchPayProduct::getProductId, reqProductId)
                         .eq(MchPayProduct::getState, CS.YES)
         );
         if(mchPayProducts == null || mchPayProducts.isEmpty()){
-            throw new BizException("商户未配置支付产品");
+            throw new BizException("商户未配置该支付产品");
         }
 
         List<Long> productIds = mchPayProducts.stream()
@@ -449,7 +455,7 @@ public abstract class AbstractPayOrderController extends ApiController {
             } catch (Exception e) {
                 continue;
             }
-            if(paymentService == null || !paymentService.isSupport(wayCode)){
+            if(paymentService == null){
                 continue;
             }
 
@@ -457,12 +463,12 @@ public abstract class AbstractPayOrderController extends ApiController {
             if(bindProductIds == null || bindProductIds.isEmpty()){
                 continue;
             }
-            for (Long productId : bindProductIds) {
-                BigDecimal rate = productRateMap.get(productId);
+            if(bindProductIds.contains(reqProductId)){
+                BigDecimal rate = productRateMap.get(reqProductId);
                 if(rate == null){
                     rate = BigDecimal.ZERO;
                 }
-                return new RouteConfig(channelSign, rate, productId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign(), channel.getId());
+                return new RouteConfig(channelSign, rate, reqProductId, channel.getChannelRate(), channel.getChannelName(), channel.getChannelSign(), channel.getId());
             }
         }
 

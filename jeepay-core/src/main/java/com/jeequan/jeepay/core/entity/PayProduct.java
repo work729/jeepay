@@ -4,6 +4,7 @@
  */
 package com.jeequan.jeepay.core.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -32,7 +33,7 @@ public class PayProduct extends BaseModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(title = "id", description = "主键ID")
-    @TableId
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     @Schema(title = "productName", description = "产品名称")

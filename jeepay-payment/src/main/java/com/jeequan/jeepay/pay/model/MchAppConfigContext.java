@@ -58,26 +58,10 @@ public class MchAppConfigContext {
         return normalMchParamsMap.get(ifCode);
     }
 
-    /** 获取isv配置信息 **/
-    public <T> T getNormalMchParamsByIfCode(String ifCode, Class<? extends NormalMchParams> cls){
-        return (T)normalMchParamsMap.get(ifCode);
-    }
-
     /** 获取特约商户配置信息 **/
     public IsvsubMchParams getIsvsubMchParamsByIfCode(String ifCode){
         return isvsubMchParamsMap.get(ifCode);
     }
-
-    /** 获取isv配置信息 **/
-    public <T> T getIsvsubMchParamsByIfCode(String ifCode, Class<? extends IsvsubMchParams> cls){
-        return (T)isvsubMchParamsMap.get(ifCode);
-    }
-
-    /** 是否为 服务商特约商户 **/
-    public boolean isIsvsubMch(){
-        return this.mchType == MchInfo.TYPE_ISVSUB;
-    }
-
     // 已废弃：第三方通道封装器访问器
 
 }

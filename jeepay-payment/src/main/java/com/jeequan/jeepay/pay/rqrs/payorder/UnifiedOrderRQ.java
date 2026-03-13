@@ -47,9 +47,10 @@ import jakarta.validation.constraints.NotNull;
 @Data
 public class UnifiedOrderRQ extends AbstractMchAppRQ {
 
-    /** 商品ID **/
-    @NotBlank(message="商品ID")
-    private String productId;
+    /** 产品 ID **/
+    @NotNull(message="产品ID不能为空")
+    @Min(value = 1, message = "产品ID必须大于0")
+    private Long productId;
 
     /** 商户订单号 **/
     @NotBlank(message="商户订单号不能为空")
