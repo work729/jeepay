@@ -149,6 +149,7 @@ public class CS {
     //接口类型
     public interface IF_CODE{
         String VORTAQPAY = "vortaqpay";     // vortaqpay 支付
+        String MAYIFU = "mayifu";     // vortaqpay 支付
     }
 
 
