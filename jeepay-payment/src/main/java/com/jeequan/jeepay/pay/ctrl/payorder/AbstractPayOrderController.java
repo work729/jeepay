@@ -130,21 +130,13 @@ public abstract class AbstractPayOrderController extends ApiController {
                 throw new BizException("同步通知地址协议仅支持http:// 或 https:// !");
             }
 
-            //获取支付参数 (缓存数据) 和 商户信息
-            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(appId)
-                    ? configContextQueryService.getMchInfoContext(mchNo)
-                    : configContextQueryService.queryMchInfoAndAppInfo(mchNo, appId);
+            MchAppConfigContext mchAppConfigContext = configContextQueryService.getMchInfoContext(mchNo);
             if(mchAppConfigContext == null){
                 throw new BizException("获取商户信息失败");
             }
 
             MchInfo mchInfo = mchAppConfigContext.getMchInfo();
             MchApp mchApp = mchAppConfigContext.getMchApp();
-            if(StringUtils.isNotBlank(appId)){
-                if(mchApp == null || mchApp.getState() != CS.YES){
-                    throw new BizException("商户应用状态不可用");
-                }
-            }
 
             RouteConfig routeConfig = findRouteConfig(mchAppConfigContext, bizRQ);
 
@@ -447,6 +439,38 @@ public abstract class AbstractPayOrderController extends ApiController {
             list.add(relation.getProductId());
         }
 
+        // 若指定了强制通道（按 channelSign 或 channelId），则仅在该通道上进行校验与返回
+        String forceSign = FORCE_CHANNEL_SIGN.get();
+        Long forceId = FORCE_CHANNEL_ID.get();
+        if(org.apache.commons.lang3.StringUtils.isNotBlank(forceSign) || forceId != null){
+            PayChannel target = null;
+            for (PayChannel c : channelList){
+                if((forceId != null && forceId.equals(c.getId())) ||
+                        (org.apache.commons.lang3.StringUtils.isNotBlank(forceSign) && forceSign.equals(c.getChannelSign()))){
+                    target = c; break;
+                }
+            }
+            if(target == null){
+                throw new BizException("指定通道不可用");
+            }
+            List<Long> bindProductIds0 = channelProductMap.get(target.getId());
+            if(bindProductIds0 == null || !bindProductIds0.contains(reqProductId)){
+                throw new BizException("指定通道未绑定该产品");
+            }
+            BigDecimal rate0 = productRateMap.get(reqProductId);
+            if(rate0 == null){ rate0 = BigDecimal.ZERO; }
+            // 校验该通道是否有实现的 PaymentService
+            try{
+                IPaymentService ps = SpringBeansUtil.getBean(target.getChannelSign() + "PaymentService", IPaymentService.class);
+                if(ps == null){
+                    throw new BizException("指定通道未实现支付能力");
+                }
+            }catch (Exception ignore){
+                throw new BizException("指定通道未实现支付能力");
+            }
+            return new RouteConfig(target.getChannelSign(), rate0, reqProductId, target.getChannelRate(), target.getChannelName(), target.getChannelSign(), target.getId());
+        }
+
         for (PayChannel channel : channelList) {
             String channelSign = channel.getChannelSign();
             IPaymentService paymentService;
@@ -475,6 +499,21 @@ public abstract class AbstractPayOrderController extends ApiController {
         throw new BizException("商户不支持该支付方式");
     }
 
+
+    /** 强制通道 ThreadLocal（由上层控制器在收到请求时注入，仅当前请求生效） **/
+    private static final ThreadLocal<String> FORCE_CHANNEL_SIGN = new ThreadLocal<>();
+    private static final ThreadLocal<Long> FORCE_CHANNEL_ID = new ThreadLocal<>();
+
+    public static void setForceChannelSign(String channelSign){
+        FORCE_CHANNEL_SIGN.set(channelSign);
+    }
+    public static void setForceChannelId(Long channelId){
+        FORCE_CHANNEL_ID.set(channelId);
+    }
+    public static void clearForceChannel(){
+        FORCE_CHANNEL_SIGN.remove();
+        FORCE_CHANNEL_ID.remove();
+    }
 
     private static class RouteConfig {
 

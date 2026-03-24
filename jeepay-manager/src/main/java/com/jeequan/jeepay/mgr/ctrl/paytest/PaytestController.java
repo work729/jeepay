@@ -61,11 +61,13 @@ public class PaytestController extends CommonCtrl {
         req.put("productId", testProductId);
         req.put("mchOrderNo", "TEST" + System.currentTimeMillis() + UUID.randomUUID().toString().replace("-", "").substring(0, 6));
         req.put("amount", amountCent);
+        req.put("channelSign", body.getString("channelSign"));
+        req.put("channelId", body.getLong("channelId"));
 
         String sign = JeepayKit.getSign(req, mchInfo.getMchSecret());
         req.put("sign", sign);
 
-        String payApi = cfg.getPaySiteUrl() + "/api/pay/unifiedOrder";
+        String payApi = cfg.getPaySiteUrl() + "/api/internal/pay/unifiedOrder";
         org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
         try {
             String respStr = rt.postForObject(payApi, new JSONObject(req), String.class);
@@ -75,7 +77,15 @@ public class PaytestController extends CommonCtrl {
             if (code == null || code != 0) {
                 throw new BizException(StringUtils.defaultIfBlank(msg, "请求失败"));
             }
-            return ApiRes.ok(resp.getJSONObject("data"));
+            JSONObject data = resp.getJSONObject("data");
+            if (data != null) {
+                String payDataType = data.getString("payDataType");
+                String payData = data.getString("payData");
+                if ("payurl".equalsIgnoreCase(payDataType) && StringUtils.isNotBlank(payData)) {
+                    data.put("payUrl", payData);
+                }
+            }
+            return ApiRes.ok(data);
         } catch (Exception e) {
             throw new BizException(e.getMessage());
         }
