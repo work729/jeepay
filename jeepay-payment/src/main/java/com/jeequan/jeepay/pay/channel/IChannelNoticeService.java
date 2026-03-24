@@ -48,7 +48,7 @@ public interface IChannelNoticeService {
 
     /** 返回需要更新的订单状态 和响应数据 **/
     ChannelRetMsg doNotice(HttpServletRequest request,
-                           Object params, PayOrder payOrder, MchAppConfigContext mchAppConfigContext, NoticeTypeEnum noticeTypeEnum);
+                           Object params, PayOrder payOrder, NoticeTypeEnum noticeTypeEnum);
 
     /** 数据库订单 状态更新异常 (仅异步通知使用) **/
     ResponseEntity doNotifyOrderStateUpdateFail(HttpServletRequest request);

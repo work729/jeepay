@@ -60,10 +60,6 @@ public class ConfigContextQueryService {
         return mchAppService.getOneByMch(mchNo, mchAppId);
     }
 
-    public MchAppConfigContext queryMchInfoAndAppInfo(String mchAppId) {
-        return queryMchInfoAndAppInfo(mchAppService.getById(mchAppId).getMchNo(), mchAppId);
-    }
-
     public MchAppConfigContext queryMchInfoAndAppInfo(String mchNo, String mchAppId){
 
         if(isCache()){
@@ -111,55 +107,6 @@ public class ConfigContextQueryService {
         return NormalMchParams.factory(payInterfaceConfig.getIfCode(), payInterfaceConfig.getIfParams());
     }
 
-
-    public IsvsubMchParams queryIsvsubMchParams(String mchNo, String mchAppId, String ifCode){
-
-        if(isCache()){
-            return configContextService.getMchAppConfigContext(mchNo, mchAppId).getIsvsubMchParamsByIfCode(ifCode);
-        }
-
-        // 查询商户的所有支持的参数配置
-        PayInterfaceConfig payInterfaceConfig = payInterfaceConfigService.getOne(PayInterfaceConfig.gw()
-                .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
-                .eq(PayInterfaceConfig::getState, CS.YES)
-                .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH_APP)
-                .eq(PayInterfaceConfig::getInfoId, mchAppId)
-                .eq(PayInterfaceConfig::getIfCode, ifCode)
-        );
-
-        if(payInterfaceConfig == null){
-            return null;
-        }
-
-        return IsvsubMchParams.factory(payInterfaceConfig.getIfCode(), payInterfaceConfig.getIfParams());
-    }
-
-
-
-    public IsvParams queryIsvParams(String isvNo, String ifCode){
-
-        if(isCache()){
-            IsvConfigContext isvConfigContext = configContextService.getIsvConfigContext(isvNo);
-            return isvConfigContext == null ? null : isvConfigContext.getIsvParamsByIfCode(ifCode);
-        }
-
-        // 查询商户的所有支持的参数配置
-        PayInterfaceConfig payInterfaceConfig = payInterfaceConfigService.getOne(PayInterfaceConfig.gw()
-                .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
-                .eq(PayInterfaceConfig::getState, CS.YES)
-                .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_ISV)
-                .eq(PayInterfaceConfig::getInfoId, isvNo)
-                .eq(PayInterfaceConfig::getIfCode, ifCode)
-        );
-
-        if(payInterfaceConfig == null){
-            return null;
-        }
-
-        return IsvParams.factory(payInterfaceConfig.getIfCode(), payInterfaceConfig.getIfParams());
-
-    }
-
     // 已废弃：第三方通道封装器访问器
 
     /** 获取仅商户维度的配置信息上下文（无应用） **/
@@ -172,28 +119,16 @@ public class ConfigContextQueryService {
         ctx.setMchNo(mchInfo.getMchNo());
         ctx.setMchType(mchInfo.getType());
         ctx.setMchInfo(mchInfo);
-        if(mchInfo.getType() == CS.MCH_TYPE_NORMAL){
-            payInterfaceConfigService.list(PayInterfaceConfig.gw()
-                    .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
-                    .eq(PayInterfaceConfig::getState, CS.YES)
-                    .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH)
-                    .eq(PayInterfaceConfig::getInfoId, mchNo)
-            ).forEach(cfg -> ctx.getNormalMchParamsMap().put(
-                    cfg.getIfCode(),
-                    NormalMchParams.factory(cfg.getIfCode(), cfg.getIfParams())
-            ));
-        }else{
-            payInterfaceConfigService.list(PayInterfaceConfig.gw()
-                    .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
-                    .eq(PayInterfaceConfig::getState, CS.YES)
-                    .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH)
-                    .eq(PayInterfaceConfig::getInfoId, mchNo)
-            ).forEach(cfg -> ctx.getIsvsubMchParamsMap().put(
-                    cfg.getIfCode(),
-                    IsvsubMchParams.factory(cfg.getIfCode(), cfg.getIfParams())
-            ));
-            ctx.setIsvConfigContext(configContextService.getIsvConfigContext(mchInfo.getIsvNo()));
-        }
+
+        payInterfaceConfigService.list(PayInterfaceConfig.gw()
+                .select(PayInterfaceConfig::getIfCode, PayInterfaceConfig::getIfParams)
+                .eq(PayInterfaceConfig::getState, CS.YES)
+                .eq(PayInterfaceConfig::getInfoType, CS.INFO_TYPE_MCH)
+                .eq(PayInterfaceConfig::getInfoId, mchNo)
+        ).forEach(cfg -> ctx.getNormalMchParamsMap().put(
+                cfg.getIfCode(),
+                NormalMchParams.factory(cfg.getIfCode(), cfg.getIfParams())
+        ));
         return ctx;
     }
 

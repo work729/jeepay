@@ -18,6 +18,7 @@ package com.jeequan.jeepay.pay.ctrl.payorder;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.ctrls.AbstractCtrl;
 import com.jeequan.jeepay.core.entity.PayOrder;
+import com.jeequan.jeepay.core.entity.PayProduct;
 import com.jeequan.jeepay.core.exception.BizException;
 import com.jeequan.jeepay.core.exception.ResponseException;
 import com.jeequan.jeepay.core.utils.SpringBeansUtil;
@@ -29,6 +30,7 @@ import com.jeequan.jeepay.pay.service.ConfigContextService;
 import com.jeequan.jeepay.pay.service.PayMchNotifyService;
 import com.jeequan.jeepay.pay.service.PayOrderProcessService;
 import com.jeequan.jeepay.service.impl.PayOrderService;
+import com.jeequan.jeepay.service.impl.PayProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -57,6 +59,7 @@ public class ChannelNoticeController extends AbstractCtrl {
     @Autowired private ConfigContextQueryService configContextQueryService;
     @Autowired private PayMchNotifyService payMchNotifyService;
     @Autowired private PayOrderProcessService payOrderProcessService;
+    @Autowired private PayProductService payProductService;
 
     /**
      * 同步通知入口
@@ -117,13 +120,18 @@ public class ChannelNoticeController extends AbstractCtrl {
                 return this.toReturnPage("支付订单不存在");
             }
 
-            //查询出商户（或应用）配置信息
-            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(payOrder.getAppId())
-                    ? configContextQueryService.getMchInfoContext(payOrder.getMchNo())
-                    : configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
+            // 校验产品有效性（基于 t_pay_product）
+            PayProduct product = payProductService.getById(payOrder.getProductId());
+            if(product == null || product.getState() == null || product.getState() != 1){
+                log.error("{}, 产品无效. productId={} ", logPrefix, payOrder.getProductId());
+                return this.toReturnPage("pay product invalid");
+            }
+
+            // 查询商户配置信息（不依赖 t_mch_app）
+            MchAppConfigContext mchAppConfigContext = configContextQueryService.getMchInfoContext(payOrder.getMchNo());
 
             //调起接口的回调判断
-            ChannelRetMsg notifyResult = payNotifyService.doNotice(request, mutablePair.getRight(), payOrder, mchAppConfigContext, IChannelNoticeService.NoticeTypeEnum.DO_RETURN);
+            ChannelRetMsg notifyResult = payNotifyService.doNotice(request, mutablePair.getRight(), payOrder, IChannelNoticeService.NoticeTypeEnum.DO_RETURN);
 
             // 返回null 表明出现异常， 无需处理通知下游等操作。
             if(notifyResult == null || notifyResult.getChannelState() == null || notifyResult.getResponseEntity() == null){
@@ -220,14 +228,8 @@ public class ChannelNoticeController extends AbstractCtrl {
                 return payNotifyService.doNotifyOrderNotExists(request);
             }
 
-            //查询出商户（或应用）配置信息
-            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(payOrder.getAppId())
-                    ? configContextQueryService.getMchInfoContext(payOrder.getMchNo())
-                    : configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
-
-
             //调起接口的回调判断
-            ChannelRetMsg notifyResult = payNotifyService.doNotice(request, mutablePair.getRight(), payOrder, mchAppConfigContext, IChannelNoticeService.NoticeTypeEnum.DO_NOTIFY);
+            ChannelRetMsg notifyResult = payNotifyService.doNotice(request, mutablePair.getRight(), payOrder, IChannelNoticeService.NoticeTypeEnum.DO_NOTIFY);
 
             // 返回null 表明出现异常， 无需处理通知下游等操作。
             if(notifyResult == null || notifyResult.getChannelState() == null || notifyResult.getResponseEntity() == null){
@@ -283,8 +285,6 @@ public class ChannelNoticeController extends AbstractCtrl {
 
     /*  跳转到支付成功页面 **/
     private String toReturnPage(String errInfo){
-
-
         return "cashier/returnPage";
     }
 
@@ -303,10 +303,16 @@ public class ChannelNoticeController extends AbstractCtrl {
                 this.toReturnPage("支付订单不存在");
             }
 
-            //查询出商户（或应用）配置信息
-            MchAppConfigContext mchAppConfigContext = StringUtils.isBlank(payOrder.getAppId())
-                    ? configContextQueryService.getMchInfoContext(payOrder.getMchNo())
-                    : configContextQueryService.queryMchInfoAndAppInfo(payOrder.getMchNo(), payOrder.getAppId());
+            // 校验产品有效性（基于 t_pay_product）
+            PayProduct product = payProductService.getById(payOrder.getProductId());
+            if(product == null || product.getState() == null || product.getState() != 1){
+                log.error("{}, 产品无效. productId={} ", logPrefix, payOrder.getProductId());
+                this.toReturnPage("pay product invalid");
+                return;
+            }
+
+            // 查询商户配置信息（不依赖 t_mch_app）
+            MchAppConfigContext mchAppConfigContext = configContextQueryService.getMchInfoContext(payOrder.getMchNo());
 
             if (StringUtils.isBlank(payOrder.getReturnUrl())) {
                 this.toReturnPage(null);
@@ -314,8 +320,6 @@ public class ChannelNoticeController extends AbstractCtrl {
             String appSecret = null;
             if(mchAppConfigContext.getMchInfo() != null && org.apache.commons.lang3.StringUtils.isNotBlank(mchAppConfigContext.getMchInfo().getMchSecret())){
                 appSecret = mchAppConfigContext.getMchInfo().getMchSecret();
-            }else{
-                appSecret = (mchAppConfigContext.getMchApp() == null) ? null : mchAppConfigContext.getMchApp().getAppSecret();
             }
             response.sendRedirect(payMchNotifyService.createReturnUrl(payOrder, appSecret));
         }
