@@ -471,7 +471,17 @@ public abstract class AbstractPayOrderController extends ApiController {
             return new RouteConfig(target.getChannelSign(), rate0, reqProductId, target.getChannelRate(), target.getChannelName(), target.getChannelSign(), target.getId());
         }
 
+        // 风控过滤：剔除命中风控条件的通道
+        List<PayChannel> filtered = new ArrayList<>();
         for (PayChannel channel : channelList) {
+            if (passRisk(bizRQ, channel)) {
+                filtered.add(channel);
+            }
+        }
+        if(filtered.isEmpty()){
+            throw new BizException("商户支付产品通道不可用");
+        }
+        for (PayChannel channel : filtered) {
             String channelSign = channel.getChannelSign();
             IPaymentService paymentService;
             try {
@@ -513,6 +523,145 @@ public abstract class AbstractPayOrderController extends ApiController {
     public static void clearForceChannel(){
         FORCE_CHANNEL_SIGN.remove();
         FORCE_CHANNEL_ID.remove();
+    }
+
+    /** 判断是否通过风控（true=可用；false=命中风控需剔除） */
+    private boolean passRisk(UnifiedOrderRQ bizRQ, PayChannel channel){
+        try{
+            String cfgStr = channel.getChannelSignConfig();
+            if(org.apache.commons.lang3.StringUtils.isBlank(cfgStr)){
+                return true;
+            }
+            JSONObject cfg = JSONObject.parseObject(cfgStr);
+            if(cfg == null){
+                return true;
+            }
+            JSONObject risk = cfg.getJSONObject("risk");
+            if(risk == null){
+                return true;
+            }
+            int enable = risk.getIntValue("enable");
+            if(enable != 1){
+                return true;
+            }
+            long amountFen = bizRQ.getAmount() == null ? 0L : bizRQ.getAmount();
+            // 排除金额（无条件生效）
+            String exclude = risk.getString("excludeAmountsYuan");
+            if(org.apache.commons.lang3.StringUtils.isNotBlank(exclude)){
+                String[] arr = exclude.split(",");
+                for(String s : arr){
+                    try{
+                        BigDecimal v = new BigDecimal(s.trim());
+                        long fen = v.multiply(new BigDecimal(100)).longValue();
+                        if(fen == amountFen){ return false; }
+                    }catch (Exception ignore){}
+                }
+            }
+            // 时间窗（仅在时间窗内才应用其它风控；时间之外不风控）
+            String start = risk.getString("startTime");
+            String end = risk.getString("endTime");
+            if(org.apache.commons.lang3.StringUtils.isNotBlank(start) && org.apache.commons.lang3.StringUtils.isNotBlank(end)){
+                int nowSec = timeToSec(DateUtil.format(new Date(), "HH:mm:ss"));
+                int sSec = timeToSec(start);
+                int eSec = timeToSec(end);
+                boolean inRange;
+                if(sSec <= eSec){
+                    inRange = nowSec >= sSec && nowSec <= eSec;
+                }else{
+                    inRange = nowSec >= sSec || nowSec <= eSec;
+                }
+                if(!inRange){
+                    return true;
+                }
+            }
+            // 金额范围（仅在范围内才应用其它风控；范围之外不风控）
+            Long singleMinFen = yuanToFen(risk.getBigDecimal("singleMinYuan"));
+            Long singleMaxFen = yuanToFen(risk.getBigDecimal("singleMaxYuan"));
+            boolean inAmountRange = true;
+            if(singleMinFen != null && amountFen < singleMinFen){ inAmountRange = false; }
+            if(singleMaxFen != null && amountFen > singleMaxFen){ inAmountRange = false; }
+            if(!inAmountRange){
+                return true;
+            }
+            // 金额类型
+            String amountType = risk.getString("amountType");
+            if(org.apache.commons.lang3.StringUtils.isNotBlank(amountType)){
+                long amountYuan = amountFen / 100;
+                if("NOT_MULTIPLE_OF_10".equals(amountType)){
+                    if(amountYuan % 10 != 0){ return false; }
+                }else if("MUL_5".equals(amountType)){
+                    if(amountYuan % 5 == 0){ return false; }
+                }else if("MUL_10".equals(amountType)){
+                    if(amountYuan % 10 == 0){ return false; }
+                }else if("MUL_50".equals(amountType)){
+                    if(amountYuan % 50 == 0){ return false; }
+                }else if("MUL_100".equals(amountType)){
+                    if(amountYuan % 100 == 0){ return false; }
+                }else if("FIXED_MULTIPLE".equals(amountType)){
+                    BigDecimal baseMul = risk.getBigDecimal("baseMultipleYuan");
+                    if(baseMul != null){
+                        long base = baseMul.multiply(new BigDecimal(1)).longValue();
+                        if(base > 0 && amountYuan % base == 0){ return false; }
+                    }
+                }else if("FIXED_AMOUNTS".equals(amountType)){
+                    BigDecimal fixed = risk.getBigDecimal("fixedAmountsYuan");
+                    if(fixed != null){
+                        long fen = fixed.multiply(new BigDecimal(100)).longValue();
+                        if(fen == amountFen){ return false; }
+                    }
+                }
+            }
+            // 最短进单间隔
+            Long minInterval = risk.getLong("minIntervalMs");
+            if(minInterval != null && minInterval > 0){
+                PayOrder last = payOrderService.getOne(PayOrder.gw()
+                        .eq(PayOrder::getChannelId, channel.getId())
+                        .orderByDesc(PayOrder::getCreatedAt)
+                        .last("limit 1"));
+                if(last != null && last.getCreatedAt() != null){
+                    long diff = new Date().getTime() - last.getCreatedAt().getTime();
+                    if(diff < minInterval){
+                        return false;
+                    }
+                }
+            }
+            // 当天交易总金额上限（按支付成功累计）
+            Long dailyMaxFen = yuanToFen(risk.getBigDecimal("dailyTotalYuan"));
+            if(dailyMaxFen != null && dailyMaxFen > 0){
+                Date startOfDay = DateUtil.beginOfDay(new Date());
+                Date endOfDay = DateUtil.endOfDay(new Date());
+                List<PayOrder> orders = payOrderService.list(PayOrder.gw()
+                        .eq(PayOrder::getChannelId, channel.getId())
+                        .eq(PayOrder::getState, PayOrder.STATE_SUCCESS)
+                        .between(PayOrder::getCreatedAt, startOfDay, endOfDay));
+                long sum = 0L;
+                if(orders != null){
+                    for(PayOrder o : orders){
+                        if(o.getAmount() != null){ sum += o.getAmount(); }
+                    }
+                }
+                if(sum + amountFen > dailyMaxFen){
+                    return false;
+                }
+            }
+            return true;
+        }catch (Exception e){
+            return true;
+        }
+    }
+
+    private Long yuanToFen(BigDecimal yuan){
+        if(yuan == null){ return null; }
+        return yuan.multiply(new BigDecimal(100)).longValue();
+    }
+
+    private int timeToSec(String hhmmss){
+        if(org.apache.commons.lang3.StringUtils.isBlank(hhmmss)){ return 0; }
+        String[] arr = hhmmss.split(":");
+        int h = arr.length > 0 ? Integer.parseInt(arr[0]) : 0;
+        int m = arr.length > 1 ? Integer.parseInt(arr[1]) : 0;
+        int s = arr.length > 2 ? Integer.parseInt(arr[2]) : 0;
+        return h * 3600 + m * 60 + s;
     }
 
     private static class RouteConfig {
