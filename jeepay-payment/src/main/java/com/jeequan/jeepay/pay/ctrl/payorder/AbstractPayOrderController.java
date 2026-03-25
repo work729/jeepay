@@ -545,43 +545,14 @@ public abstract class AbstractPayOrderController extends ApiController {
                 return true;
             }
             long amountFen = bizRQ.getAmount() == null ? 0L : bizRQ.getAmount();
-            // 排除金额（无条件生效）
-            String exclude = risk.getString("excludeAmountsYuan");
-            if(org.apache.commons.lang3.StringUtils.isNotBlank(exclude)){
-                String[] arr = exclude.split(",");
-                for(String s : arr){
-                    try{
-                        BigDecimal v = new BigDecimal(s.trim());
-                        long fen = v.multiply(new BigDecimal(100)).longValue();
-                        if(fen == amountFen){ return false; }
-                    }catch (Exception ignore){}
-                }
-            }
-            // 时间窗（仅在时间窗内才应用其它风控；时间之外不风控）
-            String start = risk.getString("startTime");
-            String end = risk.getString("endTime");
-            if(org.apache.commons.lang3.StringUtils.isNotBlank(start) && org.apache.commons.lang3.StringUtils.isNotBlank(end)){
-                int nowSec = timeToSec(DateUtil.format(new Date(), "HH:mm:ss"));
-                int sSec = timeToSec(start);
-                int eSec = timeToSec(end);
-                boolean inRange;
-                if(sSec <= eSec){
-                    inRange = nowSec >= sSec && nowSec <= eSec;
-                }else{
-                    inRange = nowSec >= sSec || nowSec <= eSec;
-                }
-                if(!inRange){
-                    return true;
-                }
-            }
-            // 金额范围（仅在范围内才应用其它风控；范围之外不风控）
+            // 单笔最小/最大金额
             Long singleMinFen = yuanToFen(risk.getBigDecimal("singleMinYuan"));
             Long singleMaxFen = yuanToFen(risk.getBigDecimal("singleMaxYuan"));
-            boolean inAmountRange = true;
-            if(singleMinFen != null && amountFen < singleMinFen){ inAmountRange = false; }
-            if(singleMaxFen != null && amountFen > singleMaxFen){ inAmountRange = false; }
-            if(!inAmountRange){
-                return true;
+            if(singleMinFen != null && amountFen < singleMinFen){
+                return false;
+            }
+            if(singleMaxFen != null && amountFen > singleMaxFen){
+                return false;
             }
             // 金额类型
             String amountType = risk.getString("amountType");
@@ -604,11 +575,47 @@ public abstract class AbstractPayOrderController extends ApiController {
                         if(base > 0 && amountYuan % base == 0){ return false; }
                     }
                 }else if("FIXED_AMOUNTS".equals(amountType)){
-                    BigDecimal fixed = risk.getBigDecimal("fixedAmountsYuan");
-                    if(fixed != null){
-                        long fen = fixed.multiply(new BigDecimal(100)).longValue();
-                        if(fen == amountFen){ return false; }
+                    String fixed = risk.getString("fixedAmountsYuan");
+                    if(org.apache.commons.lang3.StringUtils.isNotBlank(fixed)){
+                        String[] arr = fixed.split(",");
+                        for(String s : arr){
+                            try{
+                                BigDecimal v = new BigDecimal(s.trim());
+                                long fen = v.multiply(new BigDecimal(100)).longValue();
+                                if(fen == amountFen){ return false; }
+                            }catch (Exception ignore){}
+                        }
                     }
+                }
+            }
+            // 排除金额
+            String exclude = risk.getString("excludeAmountsYuan");
+            if(org.apache.commons.lang3.StringUtils.isNotBlank(exclude)){
+                String[] arr = exclude.split(",");
+                for(String s : arr){
+                    try{
+                        BigDecimal v = new BigDecimal(s.trim());
+                        long fen = v.multiply(new BigDecimal(100)).longValue();
+                        if(fen == amountFen){ return false; }
+                    }catch (Exception ignore){}
+                }
+            }
+            // 时间窗（允许时间段内可用，超出剔除）
+            String start = risk.getString("startTime");
+            String end = risk.getString("endTime");
+            if(org.apache.commons.lang3.StringUtils.isNotBlank(start) && org.apache.commons.lang3.StringUtils.isNotBlank(end)){
+                int nowSec = timeToSec(DateUtil.format(new Date(), "HH:mm:ss"));
+                int sSec = timeToSec(start);
+                int eSec = timeToSec(end);
+                boolean inRange;
+                if(sSec <= eSec){
+                    inRange = nowSec >= sSec && nowSec <= eSec;
+                }else{
+                    // 跨天，例如 23:00:00 - 02:00:00
+                    inRange = nowSec >= sSec || nowSec <= eSec;
+                }
+                if(!inRange){
+                    return false;
                 }
             }
             // 最短进单间隔
