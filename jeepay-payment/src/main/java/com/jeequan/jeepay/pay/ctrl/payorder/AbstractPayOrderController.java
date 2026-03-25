@@ -459,6 +459,12 @@ public abstract class AbstractPayOrderController extends ApiController {
             }
             BigDecimal rate0 = productRateMap.get(reqProductId);
             if(rate0 == null){ rate0 = BigDecimal.ZERO; }
+            // 风控校验（仅在强制通道模式下用于测试等场景）
+            StringBuilder rcReason0 = new StringBuilder();
+            if(!passRisk(bizRQ, target, rcReason0)){
+                String rmsg = rcReason0.length() > 0 ? rcReason0.toString() : "符合风控规则被拦截";
+                throw new BizException("风控错误: " + rmsg);
+            }
             // 校验该通道是否有实现的 PaymentService
             try{
                 IPaymentService ps = SpringBeansUtil.getBean(target.getChannelSign() + "PaymentService", IPaymentService.class);
@@ -527,6 +533,11 @@ public abstract class AbstractPayOrderController extends ApiController {
 
     /** 判断是否通过风控（true=可用；false=命中风控需剔除） */
     private boolean passRisk(UnifiedOrderRQ bizRQ, PayChannel channel){
+        return passRisk(bizRQ, channel, null);
+    }
+
+    /** 判断是否通过风控（可回填原因） */
+    private boolean passRisk(UnifiedOrderRQ bizRQ, PayChannel channel, StringBuilder reason){
         try{
             String cfgStr = channel.getChannelSignConfig();
             if(org.apache.commons.lang3.StringUtils.isBlank(cfgStr)){
@@ -549,9 +560,15 @@ public abstract class AbstractPayOrderController extends ApiController {
             Long singleMinFen = yuanToFen(risk.getBigDecimal("singleMinYuan"));
             Long singleMaxFen = yuanToFen(risk.getBigDecimal("singleMaxYuan"));
             if(singleMinFen != null && amountFen < singleMinFen){
+                if(reason != null){
+                    reason.append(buildMinMaxMsg(singleMinFen, singleMaxFen));
+                }
                 return false;
             }
             if(singleMaxFen != null && amountFen > singleMaxFen){
+                if(reason != null){
+                    reason.append(buildMinMaxMsg(singleMinFen, singleMaxFen));
+                }
                 return false;
             }
             // 金额类型
@@ -559,20 +576,38 @@ public abstract class AbstractPayOrderController extends ApiController {
             if(org.apache.commons.lang3.StringUtils.isNotBlank(amountType)){
                 long amountYuan = amountFen / 100;
                 if("NOT_MULTIPLE_OF_10".equals(amountType)){
-                    if(amountYuan % 10 != 0){ return false; }
+                    if(amountYuan % 10 != 0){
+                        if(reason != null){ reason.append("不支持非整十金额"); }
+                        return false;
+                    }
                 }else if("MUL_5".equals(amountType)){
-                    if(amountYuan % 5 == 0){ return false; }
+                    if(amountYuan % 5 == 0){
+                        if(reason != null){ reason.append("不支持5的倍数金额"); }
+                        return false;
+                    }
                 }else if("MUL_10".equals(amountType)){
-                    if(amountYuan % 10 == 0){ return false; }
+                    if(amountYuan % 10 == 0){
+                        if(reason != null){ reason.append("不支持10的倍数金额"); }
+                        return false;
+                    }
                 }else if("MUL_50".equals(amountType)){
-                    if(amountYuan % 50 == 0){ return false; }
+                    if(amountYuan % 50 == 0){
+                        if(reason != null){ reason.append("不支持50的倍数金额"); }
+                        return false;
+                    }
                 }else if("MUL_100".equals(amountType)){
-                    if(amountYuan % 100 == 0){ return false; }
+                    if(amountYuan % 100 == 0){
+                        if(reason != null){ reason.append("不支持100的倍数金额"); }
+                        return false;
+                    }
                 }else if("FIXED_MULTIPLE".equals(amountType)){
                     BigDecimal baseMul = risk.getBigDecimal("baseMultipleYuan");
                     if(baseMul != null){
                         long base = baseMul.multiply(new BigDecimal(1)).longValue();
-                        if(base > 0 && amountYuan % base == 0){ return false; }
+                        if(base > 0 && amountYuan % base == 0){
+                            if(reason != null){ reason.append("不支持固定倍数金额: ").append(baseMul.stripTrailingZeros().toPlainString()); }
+                            return false;
+                        }
                     }
                 }else if("FIXED_AMOUNTS".equals(amountType)){
                     String fixed = risk.getString("fixedAmountsYuan");
@@ -582,7 +617,10 @@ public abstract class AbstractPayOrderController extends ApiController {
                             try{
                                 BigDecimal v = new BigDecimal(s.trim());
                                 long fen = v.multiply(new BigDecimal(100)).longValue();
-                                if(fen == amountFen){ return false; }
+                                if(fen == amountFen){
+                                    if(reason != null){ reason.append("不支持固定金额: ").append(v.stripTrailingZeros().toPlainString()); }
+                                    return false;
+                                }
                             }catch (Exception ignore){}
                         }
                     }
@@ -596,7 +634,10 @@ public abstract class AbstractPayOrderController extends ApiController {
                     try{
                         BigDecimal v = new BigDecimal(s.trim());
                         long fen = v.multiply(new BigDecimal(100)).longValue();
-                        if(fen == amountFen){ return false; }
+                        if(fen == amountFen){
+                            if(reason != null){ reason.append("不支持该金额(排除金额): ").append(v.stripTrailingZeros().toPlainString()); }
+                            return false;
+                        }
                     }catch (Exception ignore){}
                 }
             }
@@ -615,6 +656,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                     inRange = nowSec >= sSec || nowSec <= eSec;
                 }
                 if(!inRange){
+                    if(reason != null){ reason.append("仅支持交易时间: ").append(start).append(" - ").append(end); }
                     return false;
                 }
             }
@@ -628,6 +670,7 @@ public abstract class AbstractPayOrderController extends ApiController {
                 if(last != null && last.getCreatedAt() != null){
                     long diff = new Date().getTime() - last.getCreatedAt().getTime();
                     if(diff < minInterval){
+                        if(reason != null){ reason.append("最短进单间隔: ").append(minInterval).append("ms"); }
                         return false;
                     }
                 }
@@ -648,6 +691,10 @@ public abstract class AbstractPayOrderController extends ApiController {
                     }
                 }
                 if(sum + amountFen > dailyMaxFen){
+                    if(reason != null){
+                        BigDecimal limitY = new BigDecimal(dailyMaxFen).divide(new BigDecimal(100));
+                        reason.append("当天交易总金额上限: ").append(limitY.stripTrailingZeros().toPlainString()).append("元");
+                    }
                     return false;
                 }
             }
@@ -669,6 +716,19 @@ public abstract class AbstractPayOrderController extends ApiController {
         int m = arr.length > 1 ? Integer.parseInt(arr[1]) : 0;
         int s = arr.length > 2 ? Integer.parseInt(arr[2]) : 0;
         return h * 3600 + m * 60 + s;
+    }
+
+    private String buildMinMaxMsg(Long minFen, Long maxFen){
+        BigDecimal minY = (minFen != null) ? new BigDecimal(minFen).divide(new BigDecimal(100)) : null;
+        BigDecimal maxY = (maxFen != null) ? new BigDecimal(maxFen).divide(new BigDecimal(100)) : null;
+        if(minY != null && maxY != null){
+            return "支持最小支付金额:" + minY.stripTrailingZeros().toPlainString() + "到最大金额:" + maxY.stripTrailingZeros().toPlainString();
+        }else if(minY != null){
+            return "支持最小支付金额:" + minY.stripTrailingZeros().toPlainString();
+        }else if(maxY != null){
+            return "支持最大支付金额:" + maxY.stripTrailingZeros().toPlainString();
+        }
+        return "金额不在允许范围内";
     }
 
     private static class RouteConfig {
