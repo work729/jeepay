@@ -66,7 +66,9 @@ public class SysUserController extends CommonCtrl {
 			@Parameter(name = "pageNumber", description = "分页页码"),
 			@Parameter(name = "pageSize", description = "分页条数"),
 			@Parameter(name = "sysUserId", description = "用户ID"),
-			@Parameter(name = "realname", description = "用户姓名")
+			@Parameter(name = "realname", description = "用户姓名"),
+			@Parameter(name = "state", description = "状态: 0-停用, 1-启用"),
+			@Parameter(name = "googleAuthEnabled", description = "谷歌验证: 0-未绑定, 1-已绑定")
 	})
 	@PreAuthorize("hasAuthority( 'ENT_UR_USER_LIST' )")
 	@RequestMapping(value="", method = RequestMethod.GET)
@@ -83,6 +85,14 @@ public class SysUserController extends CommonCtrl {
 
 		if(queryObject.getSysUserId() != null){
 			condition.eq(SysUser::getSysUserId, queryObject.getSysUserId());
+		}
+
+		if(queryObject.getState() != null){
+			condition.eq(SysUser::getState, queryObject.getState());
+		}
+
+		if(queryObject.getGoogleAuthEnabled() != null){
+			condition.eq(SysUser::getGoogleAuthEnabled, queryObject.getGoogleAuthEnabled());
 		}
 
 		condition.orderByDesc(SysUser::getCreatedAt); //时间： 降序
