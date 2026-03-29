@@ -81,6 +81,7 @@ public abstract class ApiController extends AbstractCtrl {
         // 按原始请求参数验签（与前端一致）：移除 sign；忽略 productId（仅测试页使用）
         JSONObject raw = getReqParamJSON();
         raw.remove("sign");
+        raw.remove("mchNo");
         if(!sign.equals(JeepayKit.getSign(raw, signKey))){
             throw new BizException("验签失败");
         }

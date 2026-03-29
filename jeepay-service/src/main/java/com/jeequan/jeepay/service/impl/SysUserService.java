@@ -60,23 +60,10 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
         if( StringUtils.isEmpty(sysUser.getLoginUsername()) ) {
             throw new BizException("登录用户名不能为空！");
         }
-        if( StringUtils.isEmpty(sysUser.getRealname()) ) {
-            throw new BizException("姓名不能为空！");
-        }
-        if( StringUtils.isEmpty(sysUser.getTelphone()) ) {
-            throw new BizException("手机号不能为空！");
-        }
-        if(sysUser.getSex() == null ) {
-            throw new BizException("性别不能为空！");
-        }
 
         //登录用户名不可重复
         if( count(SysUser.gw().eq(SysUser::getSysType, sysType).eq(SysUser::getLoginUsername, sysUser.getLoginUsername())) > 0 ){
             throw new BizException("登录用户名已存在！");
-        }
-        //手机号不可重复
-        if( count(SysUser.gw().eq(SysUser::getSysType, sysType).eq(SysUser::getTelphone, sysUser.getTelphone())) > 0 ){
-            throw new BizException("手机号已存在！");
         }
         //员工号不可重复
         if( count(SysUser.gw().eq(SysUser::getSysType, sysType).eq(SysUser::getUserNo, sysUser.getUserNo())) > 0 ){
